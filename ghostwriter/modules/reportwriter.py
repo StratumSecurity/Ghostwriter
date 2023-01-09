@@ -48,6 +48,10 @@ from ghostwriter.modules.exceptions import InvalidFilterValue
 from ghostwriter.modules.linting_utils import LINTER_CONTEXT
 from ghostwriter.reporting.models import Evidence
 
+# Custom code
+from ghostwriter.stratum.findings_chart import build_chart
+from ghostwriter.stratum.sd_graph import build_sd_graph
+
 # Using __name__ resolves to ghostwriter.modules.reporting
 logger = logging.getLogger(__name__)
 
@@ -252,6 +256,9 @@ def prepare_jinja2_env(debug=False):
     env.filters["compromised"] = compromised
     env.filters["add_days"] = add_days
     env.filters["format_datetime"] = format_datetime
+    # Custom functions used by Jinja templates
+    env.filters["build_chart"] = build_chart
+    env.filters["build_sd_graph"] = build_sd_graph
 
     return env
 
