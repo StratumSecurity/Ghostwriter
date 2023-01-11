@@ -1,6 +1,9 @@
+# Standard Libraries
 from enum import Enum
-from matplotlib import pyplot as plt
+
+# 3rd Party Libraries
 import pandas as pd
+from matplotlib import pyplot as plt
 
 
 class Severity(Enum):
@@ -20,7 +23,7 @@ FONT_FAMILY = 'Arial Narrow'
 BACKGROUND_COLOR = '#F6F5EE'
 
 
-def build_axis_style(ax, max_y):
+def _build_axis_style(ax, max_y):
     ax.set_xlabel('Findings Category', fontfamily=FONT_FAMILY, fontsize=10,
                   fontweight='bold')
     ax.set_ylabel('Total Number of Findings', fontfamily=FONT_FAMILY, fontsize=10,
@@ -36,25 +39,25 @@ def build_axis_style(ax, max_y):
     ax.spines.bottom.set_color(spine_color)
 
 
-def build_legend_style(ax, fig):
+def _build_legend_style(ax, fig):
     # Set the right font for the legend, remove frame, and anchor in the upper right corner
-    legend = ax.get_legend()
-    plt.setp(legend.texts, family=FONT_FAMILY)
+    h, l = ax.get_legend_handles_labels()
+    legend = ax.legend(reversed(h), reversed(l), prop={"family": FONT_FAMILY})
     legend.set_frame_on(False)
     for h in legend.legendHandles:
         h.set_width(8)
     legend.set_bbox_to_anchor((1, 1), fig.transFigure)
 
 
-def label_bars(ax):
+def _label_bars(ax):
     # Loop through each category and do not display 0 labels in chart
     suppress_zero = 0
     for container in ax.containers:
         labels = [
             int(v) if v != suppress_zero else "" for v in container.datavalues
         ]
-        plt.bar_label(container, labels=labels, label_type='center', color='white',
-                      fontweight='bold', fontfamily=FONT_FAMILY, fontsize=10)
+        ax.bar_label(container, labels=labels, label_type='center', color='white',
+                     fontweight='bold', fontfamily=FONT_FAMILY, fontsize=10)
 
 
 def build_chart(report_data):
@@ -83,12 +86,9 @@ def build_chart(report_data):
                  color={Severity.BP.value: '#4F81BD', Severity.LOW.value: '#008001', Severity.MED.value: '#E46C0B',
                         Severity.HIGH.value: '#FF0000', Severity.CRIT.value: '#A60023'})
 
-    build_axis_style(ax, max_y)
+    _build_axis_style(ax, max_y)
     fig = ax.get_figure()
     fig.set_facecolor(BACKGROUND_COLOR)
-    build_legend_style(ax, fig)
-    label_bars(ax)
-    plt.show()
-
-    # Save to a file
-    # fig.savefig('/tmp/test.svg',pad_inches=0.1, bbox_inches='tight')
+    _build_legend_style(ax, fig)
+    _label_bars(ax)
+    return fig
