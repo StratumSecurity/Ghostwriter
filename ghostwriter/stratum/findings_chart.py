@@ -19,7 +19,7 @@ class CalcCol(Enum):
     WEIGHT = 'Weight'
 
 
-FONT_FAMILY = 'Arial Narrow'
+FONT_FAMILY = 'Liberation Sans Narrow'
 BACKGROUND_COLOR = '#F6F5EE'
 
 
@@ -89,6 +89,12 @@ def build_chart(report_data):
     _build_axis_style(ax, max_y)
     fig = ax.get_figure()
     fig.set_facecolor(BACKGROUND_COLOR)
+
+    # Shrink figure to be close to current size in Word template
+    fig.set_size_inches(6.3, 2.8)
+    # Think of DPI as zooming in on the image making it easier to see
+    fig.set_dpi(200)
+
     _build_legend_style(ax, fig)
     _label_bars(ax)
     return fig

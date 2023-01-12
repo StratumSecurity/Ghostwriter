@@ -23,6 +23,10 @@ LINTER_CONTEXT = {
         "complete": False,
         "start_time": "09:00:00",
         "end_time": "17:00:00",
+        "chart_sdscore":"{{.chart_sdscore}}",
+        "chart_sdscore_rt":"",
+        "chart_bar":"{{.chart_bar}}",
+        "chart_bar_rt":"",
     },
     "client": {
         "id": 1,

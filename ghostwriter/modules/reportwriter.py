@@ -12,6 +12,7 @@ import os
 import random
 import re
 from datetime import timedelta
+from string import ascii_letters
 
 # Django Imports
 from django.conf import settings
@@ -239,6 +240,16 @@ def format_datetime(date, new_format):
         )
     return formatted_date
 
+def sort_findings(findings):
+    # Using math to with appropriate weights to make sure mediums severities with low exploit don't pass highs or crits.
+    severities = {"critical": 200, "high": 65, "medium": 20, "low": 5, "best practice": 1}
+    diff_of_exploit = {"low": 3, "medium": 2, "high": 1}
+
+    for finding in findings:
+        weight = severities[finding["severity"].lower()] * diff_of_exploit[strip_html(finding["host_detection_techniques"]).lower()]
+        finding["weight"] = weight
+
+    return sorted(findings, key=lambda f: f["weight"], reverse=True)
 
 def prepare_jinja2_env(debug=False):
     """Prepare a Jinja2 environment with all custom filters."""
@@ -256,9 +267,7 @@ def prepare_jinja2_env(debug=False):
     env.filters["compromised"] = compromised
     env.filters["add_days"] = add_days
     env.filters["format_datetime"] = format_datetime
-    # Custom functions used by Jinja templates
-    env.filters["build_chart"] = build_chart
-    env.filters["build_sd_graph"] = build_sd_graph
+    env.filters["sort_findings"] = sort_findings
 
     return env
 
@@ -304,6 +313,7 @@ class Reportwriter:
         "sup",
         "del",
         "blockquote",
+        "br",
     ]
 
     # Allowlist for evidence file extensions / filetypes
@@ -890,6 +900,26 @@ class Reportwriter:
             else:
                 font.superscript = styles["superscript"]
 
+    def _add_image(self, par, fig, filename, pad=0.1):
+        # Build the filepath to save the figure and add to report
+        # Strip special chars except for - and _
+        allowed = ascii_letters + "-"+"_"
+        new_file_name = ''.join(list(filter(allowed.__contains__, filename)))
+        directory = f'{settings.MEDIA_ROOT}/evidence/{self.report_json["project"]["id"]}'
+
+        if not os.path.exists(directory):
+            # Create a new directory because it does not exist
+            os.makedirs(directory)
+
+        filepath = f'{directory}/{new_file_name}.png'
+        # Save the figure as a png to the file system under the report directory to be saved into the report
+        fig.savefig(filepath,pad_inches=pad, bbox_inches='tight')
+
+        # Replace figure in report with saved image
+        # Use the filename as a label for replacing the text with the image
+        run = par.add_run()
+        run.add_picture(filepath, width=Inches(fig.get_figwidth()), height=Inches(fig.get_figheight()))
+
     def _replace_and_write(
         self, text, par, finding, styles=ReportConstants.DEFAULT_STYLE_VALUES.copy()
     ):
@@ -967,6 +997,19 @@ class Reportwriter:
                                 self._make_figure(par)
                             par.add_run(self.prefix_figure + text)
                         # Captions are on their own line so return
+                        return par
+
+                    if keyword == 'chart_bar':
+                        # Report data stub
+                        report_data = [['Authentication', 1, 2, 1, 1, 1], ['Input Validation', 0, 0, 0, 0, 0], [
+                            'Information Disclosure', 3, 0, 2, 0, 1], ['Session Management', 0, 0, 0, 0, 0]]
+                        par.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                        self._add_image(par, build_chart(report_data), keyword)
+                        return par
+                    elif keyword == 'chart_sdscore':
+                        sd_score = 1.3
+                        par.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                        self._add_image(par, build_sd_graph(sd_score), keyword)
                         return par
 
                     # Handle evidence files
@@ -1664,6 +1707,17 @@ class Reportwriter:
 
         # Project Notes
         context["project"]["note_rt"] = render_subdocument(context["project"]["note"], finding=None)
+
+        # Project Findings Charts
+        context["project"]["chart_bar"] = "<p>{{.chart_bar}}</p>"
+        context["project"]["chart_bar_rt"] = render_subdocument(
+            context["project"]["chart_bar"], finding=None
+        )
+
+        context["project"]["chart_sdscore"] = "<p>{{.chart_sdscore}}</p>"
+        context["project"]["chart_sdscore_rt"] = render_subdocument(
+            context["project"]["chart_sdscore"], finding=None
+        )
 
         # Assignments
         for assignment in context["team"]:

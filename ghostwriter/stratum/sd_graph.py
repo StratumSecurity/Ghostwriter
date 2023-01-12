@@ -7,7 +7,7 @@ MEAN = 'mean'
 SD = 'sd'
 BLUE = '#14588F'
 ORANGE = '#EC6403'
-FONT_FAMILY = 'Arial Narrow'
+FONT_FAMILY = 'Liberation Sans Narrow'
 
 
 def _get_regions(x_normdist, plotdata):
@@ -120,4 +120,6 @@ def build_sd_graph(sd_score):
 
     # Shrink figure to be close to current size in Word template
     fig.set_size_inches(4.5, 1.5)
+    # Think of DPI as zooming in on the image making it easier to see
+    fig.set_dpi(125)
     return fig
