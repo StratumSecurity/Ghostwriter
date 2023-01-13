@@ -3,15 +3,9 @@ from enum import Enum
 
 # 3rd Party Libraries
 import pandas as pd
-from matplotlib import pyplot as plt
 
-
-class Severity(Enum):
-    CRIT = 'Critical'
-    HIGH = 'High'
-    MED = 'Medium'
-    LOW = 'Low'
-    BP = 'Best Practice'
+# Custom code
+from enums import Severity
 
 
 class CalcCol(Enum):

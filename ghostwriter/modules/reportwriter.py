@@ -50,6 +50,12 @@ from ghostwriter.modules.linting_utils import LINTER_CONTEXT
 from ghostwriter.reporting.models import Evidence
 
 # Custom code
+from ghostwriter.stratum.enums import (
+    DifficultyExploitColor,
+    FindingStatusColor,
+    Severity,
+    get_value_from_key,
+)
 from ghostwriter.stratum.findings_chart import build_chart
 from ghostwriter.stratum.sd_graph import build_sd_graph
 
@@ -242,8 +248,8 @@ def format_datetime(date, new_format):
 
 def sort_findings(findings):
     # Using math to with appropriate weights to make sure mediums severities with low exploit don't pass highs or crits.
-    severities = {"critical": 200, "high": 65, "medium": 20, "low": 5, "best practice": 1}
-    diff_of_exploit = {"low": 3, "medium": 2, "high": 1}
+    severities = {Severity.CRIT.value: 200, Severity.HIGH.value: 65, Severity.MED.value: 20, Severity.LOW.value: 5, Severity.BP.value: 1}
+    diff_of_exploit = {Severity.LOW.value: 3, Severity.MED.value: 2, Severity.HIGH.value: 1}
 
     for finding in findings:
         weight = severities[finding["severity"].lower()] * diff_of_exploit[strip_html(finding["host_detection_techniques"]).lower()]
@@ -1693,11 +1699,11 @@ class Reportwriter:
             finding["replication_steps_rt"] = render_subdocument(
                 finding["replication_steps"], finding
             )
-            finding["host_detection_techniques_rt"] = render_subdocument(
-                finding["host_detection_techniques"], finding
+            finding["host_detection_techniques_rt"] = RichText(
+                finding["host_detection_techniques"], color=get_value_from_key(DifficultyExploitColor, finding["host_detection_techniques"])
             )
-            finding["network_detection_techniques_rt"] = render_subdocument(
-                finding["network_detection_techniques"], finding
+            finding["network_detection_techniques_rt"] = RichText(
+                finding["network_detection_techniques"], color=get_value_from_key(FindingStatusColor, finding["network_detection_techniques"])
             )
             finding["references_rt"] = render_subdocument(finding["references"], finding)
 

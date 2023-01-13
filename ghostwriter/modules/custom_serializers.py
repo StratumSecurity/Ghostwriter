@@ -770,7 +770,7 @@ class ReportDataSerializer(CustomModelSerializer):
                 medium_findings += 1
             elif finding["severity"].lower() == "low":
                 low_findings += 1
-            elif finding["severity"].lower() == "informational":
+            elif finding["severity"].lower() == "best practice":
                 info_findings += 1
             finding_order += 1
 
