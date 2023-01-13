@@ -11,9 +11,9 @@ class Severity(Enum):
 
 
 class DifficultyExploitColor(Enum):
-    LOW = (Severity.LOW.value, '#16A43E')
+    LOW = (Severity.LOW.value, '#FF0000')
     MED = (Severity.MED.value, '#ED9146')
-    HIGH = (Severity.HIGH.value, '#FF0000')
+    HIGH = (Severity.HIGH.value, '#16A43E')
 
 
 class FindingStatusColor(Enum):
@@ -26,4 +26,4 @@ def get_value_from_key(e, key):
     for item in e:
         if item.value[0].lower() == key.lower():
             return item.value[1]
-        raise ValueError(f"{key} is not a valid {e.__name__} key")
+    raise ValueError(f"{key} is not a valid {e.__name__} key")

@@ -5,7 +5,7 @@ from enum import Enum
 import pandas as pd
 
 # Custom code
-from enums import Severity
+from .enums import Severity
 
 
 class CalcCol(Enum):
