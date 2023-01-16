@@ -49,6 +49,7 @@ from ghostwriter.shepherd.models import (
     StaticServer,
     TransientServer,
 )
+from ghostwriter.stratum.enums import Severity
 from ghostwriter.users.models import User
 
 
@@ -760,17 +761,18 @@ class ReportDataSerializer(CustomModelSerializer):
         medium_findings = 0
         low_findings = 0
         info_findings = 0
-        for finding in rep["findings"]:
+        findings = rep["findings"]
+        for finding in findings:
             finding["ordering"] = finding_order
-            if finding["severity"].lower() == "critical":
+            if finding["severity"].lower() == Severity.CRIT.value.lower():
                 critical_findings += 1
-            elif finding["severity"].lower() == "high":
+            elif finding["severity"].lower() == Severity.HIGH.value.lower():
                 high_findings += 1
-            elif finding["severity"].lower() == "medium":
+            elif finding["severity"].lower() == Severity.MED.value.lower():
                 medium_findings += 1
-            elif finding["severity"].lower() == "low":
+            elif finding["severity"].lower() == Severity.LOW.value.lower():
                 low_findings += 1
-            elif finding["severity"].lower() == "best practice":
+            elif finding["severity"].lower() == Severity.BP.value.lower():
                 info_findings += 1
             finding_order += 1
 
@@ -792,5 +794,26 @@ class ReportDataSerializer(CustomModelSerializer):
         findings_score_total = critical_findings * 25 + high_findings * 10 + medium_findings * 5 + low_findings * 3 + info_findings * 1
         # The hardcoded literals need to be updated once in a while to update the rolling average
         rep["totals"]["sd_score"] = (98.9650872817955 - findings_score_total) / 76.0927314403607
+
+        # Calculate the findings chart data variable
+        chart_data = []
+        severity_indexes = list(reversed([e.value.lower() for e in Severity]))
+        for finding in findings:
+            category = finding['replication_steps']
+            severity = finding['severity'].lower()
+            category_found = False
+
+            for data in chart_data:
+                if data[0] == category:
+                    data[severity_indexes.index(severity)+1] += 1
+                    category_found = True
+                    break
+
+            # Category was not found
+            if not category_found:
+                data = [category] + [0]*5
+                data[severity_indexes.index(severity)+1] += 1
+                chart_data.append(data)
+        rep["totals"]["chart_data"] = chart_data
 
         return rep

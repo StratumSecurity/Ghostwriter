@@ -388,5 +388,6 @@ LINTER_CONTEXT = {
         "team": 2,
         "targets": 1,
         "sd_score": 1.3,
+        "chart_data":[['Authentication',0,0,1,0,1]],
     },
 }

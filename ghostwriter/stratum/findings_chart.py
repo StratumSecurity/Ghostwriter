@@ -68,7 +68,7 @@ def build_chart(report_data):
     df[CalcCol.WEIGHT.value] = (df[Severity.BP.value] * 1) + (df[Severity.LOW.value] * 2) + (
         df[Severity.MED.value] * 3) + (df[Severity.HIGH.value] * 4) + (df[Severity.CRIT.value] * 5)
     # Sorts the graph by weight
-    df = df.sort_values(CalcCol.WEIGHT.value, ascending=False)
+    df = df.sort_values([CalcCol.TOTAL.value, CalcCol.WEIGHT.value], ascending=False)
 
     # Get the max finding count and add spacing for the y axis
     max_y = int(df[CalcCol.TOTAL.value].max()) + 2

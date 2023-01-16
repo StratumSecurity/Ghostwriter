@@ -1006,11 +1006,9 @@ class Reportwriter:
                         return par
 
                     if keyword == 'chart_bar':
-                        # Report data stub
-                        report_data = [['Authentication', 1, 2, 1, 1, 1], ['Input Validation', 0, 0, 0, 0, 0], [
-                            'Information Disclosure', 3, 0, 2, 0, 1], ['Session Management', 0, 0, 0, 0, 0]]
+                        chart_data = self.report_json["totals"]["chart_data"]
                         par.alignment = WD_ALIGN_PARAGRAPH.LEFT
-                        self._add_image(par, build_chart(report_data), keyword)
+                        self._add_image(par, build_chart(chart_data), keyword)
                         return par
                     elif keyword == 'chart_sdscore':
                         sd_score = self.report_json["totals"]["sd_score"]
@@ -1700,10 +1698,10 @@ class Reportwriter:
                 finding["replication_steps"], finding
             )
             finding["host_detection_techniques_rt"] = RichText(
-                finding["host_detection_techniques"], color=get_value_from_key(DifficultyExploitColor, strip_html(finding["host_detection_techniques"]))
+                strip_html(finding["host_detection_techniques"]), color=get_value_from_key(DifficultyExploitColor, strip_html(finding["host_detection_techniques"]))
             )
             finding["network_detection_techniques_rt"] = RichText(
-                finding["network_detection_techniques"], color=get_value_from_key(FindingStatusColor, strip_html(finding["network_detection_techniques"]))
+                strip_html(finding["network_detection_techniques"]), color=get_value_from_key(FindingStatusColor, strip_html(finding["network_detection_techniques"]))
             )
             finding["references_rt"] = render_subdocument(finding["references"], finding)
 
