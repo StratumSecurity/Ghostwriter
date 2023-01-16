@@ -387,5 +387,6 @@ LINTER_CONTEXT = {
         "scope": 6,
         "team": 2,
         "targets": 1,
+        "sd_score": 1.3,
     },
 }

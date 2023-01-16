@@ -94,6 +94,7 @@ def _annotate_score(sd_score, y, ax, x_shift=0, y_shift=0):
 
 
 def _plot_score(sd_score, ax, plotdata, x_shift=0, y_shift=0):
+    sd_score = round(sd_score, 1)
     y = norm.pdf(sd_score, plotdata[MEAN], plotdata[SD])
     ax.scatter(sd_score, y, s=64, color='white', ec=ORANGE, zorder=10)
     _annotate_score(sd_score, y, ax, x_shift, y_shift)

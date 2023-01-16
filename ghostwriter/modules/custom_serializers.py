@@ -788,4 +788,9 @@ class ReportDataSerializer(CustomModelSerializer):
         rep["totals"]["team"] = total_team
         rep["totals"]["targets"] = total_targets
 
+        # Calculate SD score
+        findings_score_total = critical_findings * 25 + high_findings * 10 + medium_findings * 5 + low_findings * 3 + info_findings * 1
+        # The hardcoded literals need to be updated once in a while to update the rolling average
+        rep["totals"]["sd_score"] = (98.9650872817955 - findings_score_total) / 76.0927314403607
+
         return rep

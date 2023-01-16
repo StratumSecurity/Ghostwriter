@@ -1013,7 +1013,7 @@ class Reportwriter:
                         self._add_image(par, build_chart(report_data), keyword)
                         return par
                     elif keyword == 'chart_sdscore':
-                        sd_score = 1.3
+                        sd_score = self.report_json["totals"]["sd_score"]
                         par.alignment = WD_ALIGN_PARAGRAPH.CENTER
                         self._add_image(par, build_sd_graph(sd_score), keyword)
                         return par
