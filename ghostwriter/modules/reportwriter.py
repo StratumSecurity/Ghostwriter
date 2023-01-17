@@ -919,7 +919,7 @@ class Reportwriter:
 
         filepath = f'{directory}/{new_file_name}.png'
         # Save the figure as a png to the file system under the report directory to be saved into the report
-        fig.savefig(filepath,pad_inches=pad, bbox_inches='tight')
+        fig.savefig(filepath,pad_inches=pad, bbox_inches='tight', dpi=fig.get_dpi())
 
         # Replace figure in report with saved image
         # Use the filename as a label for replacing the text with the image

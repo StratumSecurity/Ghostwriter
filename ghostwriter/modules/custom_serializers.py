@@ -799,18 +799,24 @@ class ReportDataSerializer(CustomModelSerializer):
         chart_data = []
         severity_indexes = list(reversed([e.value.lower() for e in Severity]))
         for finding in findings:
-            category = finding['replication_steps']
+            # Have to strip HTML because it's in a field that takes HTML
+            category = strip_html(finding['replication_steps'])
+            # Replace spaces with newlines to wrap x-axis labels
+            category = category.replace(" ", "\n")
+
             severity = finding['severity'].lower()
             category_found = False
 
             for data in chart_data:
                 if data[0] == category:
+                    # Update the finding count for the severity
+                    # +1 in the index is to adjust as the label is in the first index
                     data[severity_indexes.index(severity)+1] += 1
                     category_found = True
                     break
 
-            # Category was not found
             if not category_found:
+                # Add new entry with category label and all zeros
                 data = [category] + [0]*5
                 data[severity_indexes.index(severity)+1] += 1
                 chart_data.append(data)

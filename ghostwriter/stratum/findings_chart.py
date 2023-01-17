@@ -14,13 +14,14 @@ class CalcCol(Enum):
 
 
 FONT_FAMILY = 'Liberation Sans Narrow'
+FONT_SIZE = 8
 BACKGROUND_COLOR = '#F6F5EE'
 
 
 def _build_axis_style(ax, max_y):
-    ax.set_xlabel('Findings Category', fontfamily=FONT_FAMILY, fontsize=10,
+    ax.set_xlabel('Findings Category', fontfamily=FONT_FAMILY, fontsize=FONT_SIZE,
                   fontweight='bold')
-    ax.set_ylabel('Total Number of Findings', fontfamily=FONT_FAMILY, fontsize=10,
+    ax.set_ylabel('Total Number of Findings', fontfamily=FONT_FAMILY, fontsize=FONT_SIZE,
                   fontweight='bold')
     ax.set_facecolor(BACKGROUND_COLOR)
     ax.set_yticks(range(0, max_y))
@@ -36,7 +37,7 @@ def _build_axis_style(ax, max_y):
 def _build_legend_style(ax, fig):
     # Set the right font for the legend, remove frame, and anchor in the upper right corner
     h, l = ax.get_legend_handles_labels()
-    legend = ax.legend(reversed(h), reversed(l), prop={"family": FONT_FAMILY})
+    legend = ax.legend(reversed(h), reversed(l), prop={'family': FONT_FAMILY, 'size': FONT_SIZE})
     legend.set_frame_on(False)
     for h in legend.legendHandles:
         h.set_width(8)
@@ -48,10 +49,10 @@ def _label_bars(ax):
     suppress_zero = 0
     for container in ax.containers:
         labels = [
-            int(v) if v != suppress_zero else "" for v in container.datavalues
+            int(v) if v != suppress_zero else '' for v in container.datavalues
         ]
         ax.bar_label(container, labels=labels, label_type='center', color='white',
-                     fontweight='bold', fontfamily=FONT_FAMILY, fontsize=10)
+                     fontweight='bold', fontfamily=FONT_FAMILY, fontsize=FONT_SIZE)
 
 
 def build_chart(report_data):
@@ -76,7 +77,8 @@ def build_chart(report_data):
     df = df.drop(columns=[CalcCol.TOTAL.value, CalcCol.WEIGHT.value])
 
     # Digital Color Meter was used to get exact color codes from Excel chart
-    ax = df.plot(x=category_label, legend='reverse', kind='bar', fontsize=8, stacked=True, rot=0,
+    # font size - 2 is used to prevent overlapping x-axis labels
+    ax = df.plot(x=category_label, legend='reverse', kind='bar', fontsize=FONT_SIZE - 2, stacked=True, rot=0,
                  color={Severity.BP.value: '#4F81BD', Severity.LOW.value: '#008001', Severity.MED.value: '#E46C0B',
                         Severity.HIGH.value: '#FF0000', Severity.CRIT.value: '#A60023'})
 
@@ -85,6 +87,7 @@ def build_chart(report_data):
     fig.set_facecolor(BACKGROUND_COLOR)
 
     # Shrink figure to be close to current size in Word template
+    # Current literals set make the figure fit on the page correctly
     fig.set_size_inches(6.3, 2.8)
     # Think of DPI as zooming in on the image making it easier to see
     fig.set_dpi(200)
