@@ -56,7 +56,7 @@ from ghostwriter.stratum.enums import (
     Severity,
     get_value_from_key,
 )
-from ghostwriter.stratum.findings_chart import build_chart
+from ghostwriter.stratum.findings_chart import build_chart, build_pie_chart
 from ghostwriter.stratum.sd_graph import build_sd_graph
 
 # Using __name__ resolves to ghostwriter.modules.reporting
@@ -1015,6 +1015,11 @@ class Reportwriter:
                         par.alignment = WD_ALIGN_PARAGRAPH.CENTER
                         self._add_image(par, build_sd_graph(sd_score), keyword)
                         return par
+                    elif keyword == 'chart_pie':
+                        chart_data = self.report_json["totals"]["chart_data"]
+                        total_findings = self.report_json["totals"]["findings"]
+                        self._add_image(par, build_pie_chart(chart_data, total_findings), keyword)
+                        return par
 
                     # Handle evidence files
                     if "evidence" in finding:
@@ -1721,6 +1726,11 @@ class Reportwriter:
         context["project"]["chart_sdscore"] = "<p>{{.chart_sdscore}}</p>"
         context["project"]["chart_sdscore_rt"] = render_subdocument(
             context["project"]["chart_sdscore"], finding=None
+        )
+
+        context["project"]["chart_pie"] = "<p>{{.chart_pie}}</p>"
+        context["project"]["chart_pie_rt"] = render_subdocument(
+            context["project"]["chart_pie"], finding=None
         )
 
         # Assignments

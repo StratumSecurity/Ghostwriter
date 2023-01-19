@@ -66,13 +66,13 @@ class FindingForm(forms.ModelForm):
         ] = "What needs to be done ..."
         self.fields["replication_steps"].widget.attrs[
             "placeholder"
-        ] = "How to reproduce/find this issue ..."
+        ] = "What is the category ..."
         self.fields["host_detection_techniques"].widget.attrs[
             "placeholder"
-        ] = "How to detect it on an endpoint ..."
+        ] = "How difficult is exploitation ..."
         self.fields["network_detection_techniques"].widget.attrs[
             "placeholder"
-        ] = "How to detect it on a network ..."
+        ] = "Is the finding OPEN, ACCEPTED, or CLOSED ..."
         self.fields["references"].widget.attrs[
             "placeholder"
         ] = "Some useful links and references ..."
@@ -343,13 +343,13 @@ class ReportFindingLinkUpdateForm(forms.ModelForm):
         ] = "What needs to be done ..."
         self.fields["replication_steps"].widget.attrs[
             "placeholder"
-        ] = "How to reproduce/find this issue ..."
+        ] = "What is the category ..."
         self.fields["host_detection_techniques"].widget.attrs[
             "placeholder"
-        ] = "How to detect it on an endpoint ..."
+        ] = "How difficult is exploitation ..."
         self.fields["network_detection_techniques"].widget.attrs[
             "placeholder"
-        ] = "How to detect it on a network ..."
+        ] = "Is the finding OPEN, ACCEPTED, or CLOSED ..."
         self.fields["references"].widget.attrs[
             "placeholder"
         ] = "Some useful links and references ..."

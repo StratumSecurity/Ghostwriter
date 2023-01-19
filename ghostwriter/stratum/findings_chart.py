@@ -95,3 +95,27 @@ def build_chart(report_data):
     _build_legend_style(ax, fig)
     _label_bars(ax)
     return fig
+
+
+def build_pie_chart(report_data, total_findings):
+    df = pd.DataFrame(report_data)
+    # Make the category label the index and then the only column in the frame is the percentage
+    df = df.set_index(0)
+    df = round(df.sum(axis=1, numeric_only=True) / total_findings * 100, 0).astype(int)
+    ax = df.plot(kind='pie', radius=1.5, y=1, legend=False,
+                 wedgeprops={'linewidth': 1, 'edgecolor': 'white', 'antialiased': True},
+                 autopct='%1.0f%%', pctdistance=0.8, figsize=(10, 5),
+                 startangle=0, labeldistance=1.2,
+                 # TODO Update colors based on what John wants when he gets back to me
+                 colors=['#4F81BD', '#008001', '#E46C0B', '#FF0000', '#A60023'],
+                 textprops={'size': 11, 'weight': 'bold', 'family': FONT_FAMILY, 'horizontalalignment': 'center'})
+    ax.set_ylabel(None)
+
+    for text in ax.texts:
+        if '%' in text.get_text():
+            text.set_color('white')
+
+    fig = ax.get_figure()
+    fig.set_facecolor(BACKGROUND_COLOR)
+    fig.set_dpi(100)
+    return fig
