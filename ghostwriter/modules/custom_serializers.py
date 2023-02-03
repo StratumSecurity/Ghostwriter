@@ -49,7 +49,7 @@ from ghostwriter.shepherd.models import (
     StaticServer,
     TransientServer,
 )
-from ghostwriter.stratum.enums import Severity
+from ghostwriter.stratum.enums import FindingStatusColor, Severity
 from ghostwriter.users.models import User
 
 
@@ -761,19 +761,40 @@ class ReportDataSerializer(CustomModelSerializer):
         medium_findings = 0
         low_findings = 0
         info_findings = 0
+
+        open_critical_findings = 0
+        open_high_findings = 0
+        open_medium_findings = 0
+        open_low_findings = 0
+        open_info_findings = 0
         findings = rep["findings"]
         for finding in findings:
             finding["ordering"] = finding_order
-            if finding["severity"].lower() == Severity.CRIT.value.lower():
+            severity = finding["severity"].lower()
+            finding_status = strip_html(finding["network_detection_techniques"]).lower()
+            open_status = FindingStatusColor.OPEN.value[0].lower()
+            accepted_status = FindingStatusColor.ACCEPTED.value[0].lower()
+
+            def _increment_open_finding(count, finding_status, open_status, accepted_status):
+                if finding_status == open_status or finding_status == accepted_status:
+                    count += 1
+                return count
+
+            if severity == Severity.CRIT.value.lower():
                 critical_findings += 1
-            elif finding["severity"].lower() == Severity.HIGH.value.lower():
+                open_critical_findings = _increment_open_finding(open_critical_findings, finding_status, open_status, accepted_status)
+            elif severity == Severity.HIGH.value.lower():
                 high_findings += 1
-            elif finding["severity"].lower() == Severity.MED.value.lower():
+                open_high_findings = _increment_open_finding(open_high_findings, finding_status, open_status, accepted_status)
+            elif severity == Severity.MED.value.lower():
                 medium_findings += 1
-            elif finding["severity"].lower() == Severity.LOW.value.lower():
+                open_medium_findings = _increment_open_finding(open_medium_findings, finding_status, open_status, accepted_status)
+            elif severity == Severity.LOW.value.lower():
                 low_findings += 1
-            elif finding["severity"].lower() == Severity.BP.value.lower():
+                open_low_findings = _increment_open_finding(open_low_findings, finding_status, open_status, accepted_status)
+            elif severity == Severity.BP.value.lower():
                 info_findings += 1
+                open_info_findings = _increment_open_finding(open_info_findings, finding_status, open_status, accepted_status)
             finding_order += 1
 
         # Add a ``totals`` key to track the values
@@ -786,12 +807,18 @@ class ReportDataSerializer(CustomModelSerializer):
         rep["totals"]["findings_medium"] = medium_findings
         rep["totals"]["findings_low"] = low_findings
         rep["totals"]["findings_info"] = info_findings
+        rep["totals"]["open_findings_critical"] = open_critical_findings
+        rep["totals"]["open_findings_high"] = open_high_findings
+        rep["totals"]["open_findings_medium"] = open_medium_findings
+        rep["totals"]["open_findings_low"] = open_low_findings
+        rep["totals"]["open_findings_info"] = open_info_findings
+        rep["totals"]["open_findings"] = open_critical_findings + open_high_findings + open_medium_findings + open_low_findings + open_info_findings
         rep["totals"]["scope"] = total_scope_lines
         rep["totals"]["team"] = total_team
         rep["totals"]["targets"] = total_targets
 
-        # Calculate SD score
-        findings_score_total = critical_findings * 25 + high_findings * 10 + medium_findings * 5 + low_findings * 3 + info_findings * 1
+        # Calculate SD score - in statistics this is called Z-Score
+        findings_score_total = open_critical_findings * 25 + open_high_findings * 10 + open_medium_findings * 5 + open_low_findings * 3 + open_info_findings * 1
         # The hardcoded literals need to be updated once in a while to update the rolling average
         rep["totals"]["sd_score"] = (98.9650872817955 - findings_score_total) / 76.0927314403607
 
