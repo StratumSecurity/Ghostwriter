@@ -20,8 +20,16 @@ class ReportFindingFilter(django_filters.FilterSet):
 
     **Fields**
 
-    ``title``
-        Case insensitive search of the title field contents.
+    ``q``
+        Case insensitive search of the title or finding evidence field contents.
+    ``start_date``
+        Date range search for findings.
+    ``end_date``
+        Date range search for findings.
+    ``start_date_range``
+        Date range search for findings.
+    ``tester``
+        Find findings by tester.
     ``severity``
         Checkbox choice filter using :model:`reporting.Severity`.
     ``finding_type``

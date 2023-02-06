@@ -35,7 +35,7 @@
                         <th class="align-middle pr-4">Finding Type</th>
                     </tr>
                 </thead>
-                {% for reportFinding in filter.qs %}
+                {% for reportFinding in page_obj %}
                     <tr>
                         <td class="align-middle" style="color:#{{reportFinding.severity.color}};font-weight:bold">{{ reportFinding.severity.severity }}</td>
                         <td class="align-middle">{{ reportFinding.replication_steps | striptags }}</td>
@@ -47,6 +47,29 @@
                 {% endfor %}
                 </tbody>
             </table>
+        </div>
+
+        <div class="pagination">
+            <span class="step-links">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1&{{ parameters }}">&laquo; first</a>
+                    <a href="?page={{ page_obj.previous_page_number }}&{{ parameters }}">previous</a>
+                {% endif %}
+
+                <span class="current">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                </span>
+
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}&{{ parameters }}">next</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}&{{ parameters }}">last &raquo;</a>
+                {% endif %}
+            </span>
+            <select id="page_size" class="form-control custom_select col-md-1" onchange="updateTableWithPageSize()">
+                {% for ps in page_size_values %}
+                   <option value="{{ ps }}">{{ ps }}</option>
+                {% endfor %}
+            </select>
         </div>
     {% endif %}
 {% endblock %}
@@ -63,6 +86,9 @@
                             }
                         );
             $('.tablesorter').trigger('update');
+
+            // Updates the page size drop down when the page_size param is set in the URL
+            loadPageSizeValue();
         });
 
         // Export to CSV
@@ -111,6 +137,21 @@
             // Automatically click the link to trigger download
             temp_link.click();
             document.body.removeChild(temp_link);
+        }
+
+        const page_size_label = "page_size";
+        function updateTableWithPageSize() {
+            const urlParams = new URLSearchParams(location.search);
+            const pageSize = document.getElementById(page_size_label).value();
+            // Update the page size if it's in the URL, otherwise, add it
+            urlParams.set(page_size_label, pageSize);
+            location = location.href.split("?")[0] + "?" + urlParams.toString()
+        }
+
+        function loadPageSizeValue(){
+            const urlParams = new URLSearchParams(location.search);
+            const pageSizeElement = document.getElementById(page_size_label);
+            pageSizeElement.value = urlParams.get(page_size_label) ? urlParams.get(page_size_label) : 15;
         }
     </script>
 
