@@ -146,7 +146,24 @@
                                         data-placement="top"
                                         title="Click-n-drag to reposition or categorize"
                                     ></td>
-                                    <td class="align-middle">
+                                    <td class="align-middle icon {% if finding.finding_type.finding_type == "Network" %}
+                                               network-icon" title="Network Finding"
+                                            {% elif finding.finding_type.finding_type == "Wireless" %}
+                                               wireless-icon" title="Wireless Finding"
+                                            {% elif finding.finding_type.finding_type == "Physical" %}
+                                               physical-icon" title="Physical Security Finding"
+                                            {% elif finding.finding_type.finding_type == "Web" %}
+                                               code-icon" title="Web App Finding"
+                                            {% elif finding.finding_type.finding_type == "Mobile Application" %}
+                                               mobile-icon" title="Mobile Finding"
+                                            {% elif finding.finding_type.finding_type == "Cloud" %}
+                                               cloud-icon" title="Cloud Finding"
+                                            {% elif finding.finding_type.finding_type == "Host" %}
+                                               host-icon" title="Local Host Finding"
+                                            {% else %}
+                                               host-icon" title="other Finding"
+                                            {% endif %}>
+                                        <span style="display: none;">{{ finding.finding_type.finding_type }}</span>
                                         <a id="delete-target-content-finding-{{ finding.id }}"
                                         {% if finding.added_as_blank %}
                                             class="clickable icon flag-icon" data-toggle="tooltip" data-placement="top" title="Finding started as a blank template, not from the finding library"
