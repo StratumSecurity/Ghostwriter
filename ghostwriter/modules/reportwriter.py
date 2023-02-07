@@ -926,9 +926,7 @@ class Reportwriter:
         run = par.add_run()
         run.add_picture(filepath, width=Inches(fig.get_figwidth()), height=Inches(fig.get_figheight()))
 
-    def _replace_and_write(
-        self, text, par, finding, styles=ReportConstants.DEFAULT_STYLE_VALUES.copy()
-    ):
+    def _replace_and_write(self, text, par, finding, styles=ReportConstants.DEFAULT_STYLE_VALUES.copy()):
         """
         Find and replace template keywords in the provided text.
 
@@ -1699,9 +1697,7 @@ class Reportwriter:
             finding["mitigation_rt"] = mitigation_section
             finding["recommendation_rt"] = mitigation_section
 
-            finding["replication_steps_rt"] = render_subdocument(
-                finding["replication_steps"], finding
-            )
+            finding["replication_steps_rt"] = render_subdocument(finding["replication_steps"], finding)
             finding["host_detection_techniques_rt"] = RichText(
                 strip_html(finding["host_detection_techniques"]), color=get_value_from_key(DifficultyExploitColor, strip_html(finding["host_detection_techniques"]))
             )

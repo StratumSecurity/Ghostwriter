@@ -54,28 +54,14 @@ class FindingForm(forms.ModelForm):
         self.fields["title"].widget.attrs["placeholder"] = "Finding Title"
         self.fields["description"].widget.attrs["placeholder"] = "What is this ..."
         self.fields["impact"].widget.attrs["placeholder"] = "What is the impact ..."
-        self.fields["cvss_score"].widget.attrs[
-            "placeholder"
-        ] = "What is the CVSS score ..."
-        self.fields["cvss_vector"].widget.attrs[
-            "placeholder"
-        ] = "What is the CVSS vector ..."
+        self.fields["cvss_score"].widget.attrs["placeholder"] = "What is the CVSS score ..."
+        self.fields["cvss_vector"].widget.attrs["placeholder"] = "What is the CVSS vector ..."
 
-        self.fields["mitigation"].widget.attrs[
-            "placeholder"
-        ] = "What needs to be done ..."
-        self.fields["replication_steps"].widget.attrs[
-            "placeholder"
-        ] = "What is the category ..."
-        self.fields["host_detection_techniques"].widget.attrs[
-            "placeholder"
-        ] = "How difficult is exploitation ..."
-        self.fields["network_detection_techniques"].widget.attrs[
-            "placeholder"
-        ] = "Is the finding OPEN, ACCEPTED, or CLOSED ..."
-        self.fields["references"].widget.attrs[
-            "placeholder"
-        ] = "Some useful links and references ..."
+        self.fields["mitigation"].widget.attrs["placeholder"] = "What needs to be done ..."
+        self.fields["replication_steps"].widget.attrs["placeholder"] = "What is the category ..."
+        self.fields["host_detection_techniques"].widget.attrs["placeholder"] = "How difficult is exploitation ..."
+        self.fields["network_detection_techniques"].widget.attrs["placeholder"] = "Is the finding OPEN, ACCEPTED, or CLOSED ..."
+        self.fields["references"].widget.attrs["placeholder"] = "Some useful links and references ..."
         self.fields["finding_guidance"].widget.attrs[
             "placeholder"
         ] = "When using this finding in a report be sure to include ..."
@@ -332,27 +318,16 @@ class ReportFindingLinkUpdateForm(forms.ModelForm):
         self.fields["title"].widget.attrs["placeholder"] = "Finding Title"
         self.fields["description"].widget.attrs["placeholder"] = "What is this ..."
         self.fields["impact"].widget.attrs["placeholder"] = "What is the impact ..."
-        self.fields["cvss_score"].widget.attrs[
-            "placeholder"
-        ] = "What is the CVSS score ..."
-        self.fields["cvss_vector"].widget.attrs[
-            "placeholder"
-        ] = "What is the CVSS vector ..."
-        self.fields["mitigation"].widget.attrs[
-            "placeholder"
-        ] = "What needs to be done ..."
-        self.fields["replication_steps"].widget.attrs[
-            "placeholder"
-        ] = "What is the category ..."
-        self.fields["host_detection_techniques"].widget.attrs[
-            "placeholder"
-        ] = "How difficult is exploitation ..."
-        self.fields["network_detection_techniques"].widget.attrs[
-            "placeholder"
-        ] = "Is the finding OPEN, ACCEPTED, or CLOSED ..."
-        self.fields["references"].widget.attrs[
-            "placeholder"
-        ] = "Some useful links and references ..."
+        self.fields["cvss_score"].widget.attrs["placeholder"] = "What is the CVSS score ..."
+        self.fields["cvss_vector"].widget.attrs["placeholder"] = "What is the CVSS vector ..."
+        self.fields["mitigation"].widget.attrs["placeholder"] = "What needs to be done ..."
+        self.fields["replication_steps"].widget.attrs["placeholder"] = "What is the category ..."
+        self.fields["host_detection_techniques"].widget.attrs["placeholder"] = "How difficult is exploitation ..."
+        self.fields["network_detection_techniques"].widget.attrs["placeholder"] = "Is the finding OPEN, ACCEPTED, or CLOSED ..."
+        self.fields["references"].widget.attrs["placeholder"] = "Some useful links and references ..."
+        self.fields["tags"].widget.attrs["placeholder"] = "ATT&CK:T1555, privesc, ..."
+        self.fields["finding_type"].label = "Finding Type"
+        self.fields["assigned_to"].label = "Assigned Editor"
         # Design form layout with Crispy FormHelper
         self.helper = FormHelper()
         self.helper.form_show_labels = True
