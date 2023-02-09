@@ -42,3 +42,9 @@ requests==2.27.1
 django-timezone-field==4.2.3
 pyjwt==2.4.0
 psutil==5.9.2
+
+# Custom code specific
+matplotlib==3.6.2
+numpy==1.24.1
+pandas==1.5.2
+scipy==1.8.1

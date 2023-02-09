@@ -64,15 +64,9 @@ class FindingForm(forms.ModelForm):
         self.fields["mitigation"].widget.attrs[
             "placeholder"
         ] = "What needs to be done ..."
-        self.fields["replication_steps"].widget.attrs[
-            "placeholder"
-        ] = "How to reproduce/find this issue ..."
-        self.fields["host_detection_techniques"].widget.attrs[
-            "placeholder"
-        ] = "How to detect it on an endpoint ..."
-        self.fields["network_detection_techniques"].widget.attrs[
-            "placeholder"
-        ] = "How to detect it on a network ..."
+        self.fields["replication_steps"].widget.attrs["placeholder"] = "What is the category ..."
+        self.fields["host_detection_techniques"].widget.attrs["placeholder"] = "How difficult is exploitation ..."
+        self.fields["network_detection_techniques"].widget.attrs["placeholder"] = "Is the finding OPEN, ACCEPTED, or CLOSED ..."
         self.fields["references"].widget.attrs[
             "placeholder"
         ] = "Some useful links and references ..."
@@ -341,15 +335,9 @@ class ReportFindingLinkUpdateForm(forms.ModelForm):
         self.fields["mitigation"].widget.attrs[
             "placeholder"
         ] = "What needs to be done ..."
-        self.fields["replication_steps"].widget.attrs[
-            "placeholder"
-        ] = "How to reproduce/find this issue ..."
-        self.fields["host_detection_techniques"].widget.attrs[
-            "placeholder"
-        ] = "How to detect it on an endpoint ..."
-        self.fields["network_detection_techniques"].widget.attrs[
-            "placeholder"
-        ] = "How to detect it on a network ..."
+        self.fields["replication_steps"].widget.attrs["placeholder"] = "What is the category ..."
+        self.fields["host_detection_techniques"].widget.attrs["placeholder"] = "How difficult is exploitation ..."
+        self.fields["network_detection_techniques"].widget.attrs["placeholder"] = "Is the finding OPEN, ACCEPTED, or CLOSED..."
         self.fields["references"].widget.attrs[
             "placeholder"
         ] = "Some useful links and references ..."
