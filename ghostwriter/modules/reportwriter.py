@@ -263,7 +263,7 @@ def sort_findings(findings):
     }
 
     for finding in findings:
-        weight = severities[finding["severity"].lower()] * diff_of_exploit[strip_html(finding["host_detection_techniques"]).lower()]
+        weight = severities[finding["severity"].lower()] * diff_of_exploit.get(strip_html(finding["host_detection_techniques"]).lower(), 1)
         finding["weight"] = weight
 
     return sorted(findings, key=lambda f: f["weight"], reverse=True)
