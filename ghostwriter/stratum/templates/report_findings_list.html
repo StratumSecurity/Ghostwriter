@@ -142,7 +142,7 @@
         const page_size_label = "page_size";
         function updateTableWithPageSize() {
             const urlParams = new URLSearchParams(location.search);
-            const pageSize = document.getElementById(page_size_label).value();
+            const pageSize = document.getElementById(page_size_label).value;
             // Update the page size if it's in the URL, otherwise, add it
             urlParams.set(page_size_label, pageSize);
             location = location.href.split("?")[0] + "?" + urlParams.toString()
