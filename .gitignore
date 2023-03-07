@@ -282,3 +282,6 @@ cypress/*
 
 # Ignore renamed CLI binary
 ghostwriter-cli
+
+# Local config files
+config/settings/*
