@@ -13,7 +13,7 @@ SECRET_KEY = env(
 # https://docs.djangoproject.com/en/dev/ref/settings/#allowed-hosts
 hosts = env(
     "DJANGO_ALLOWED_HOSTS",
-    default="localhost 0.0.0.0 127.0.0.1 172.20.0.5 django host.docker.internal"
+    default="localhost 0.0.0.0 127.0.0.1 172.20.0.5 django host.docker.internal 10.0.0.95 100.81.155.103"
 )
 ALLOWED_HOSTS = hosts.split(" ")
 

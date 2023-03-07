@@ -3,13 +3,13 @@
 # Standard Libraries
 from datetime import datetime
 
-# 3rd Party Libraries
-import pytz
-from bs4 import BeautifulSoup
-
 # Django Imports
 from django.conf import settings
 from django.utils import dateformat
+
+# 3rd Party Libraries
+import pytz
+from bs4 import BeautifulSoup
 from rest_framework import serializers
 from rest_framework.serializers import (
     RelatedField,
@@ -235,7 +235,9 @@ class ReportSerializer(TaggitSerializer, CustomModelSerializer):
     creation = SerializerMethodField("get_last_update")
     total_findings = SerializerMethodField("get_total_findings")
 
-    findings = FindingLinkSerializer(source="reportfindinglink_set", many=True, exclude=["id", "report"])
+    findings = FindingLinkSerializer(
+        source="reportfindinglink_set", many=True, exclude=["id", "report"]
+    )
 
     tags = TagListSerializerField()
 
@@ -586,7 +588,9 @@ class ProjectSerializer(TaggitSerializer, CustomModelSerializer):
 
     timezone = TimeZoneSerializerField()
 
-    notes = ProjectNoteSerializer(source="projectnote_set", many=True, exclude=["id", "project"])
+    notes = ProjectNoteSerializer(
+        source="projectnote_set", many=True, exclude=["id", "project"]
+    )
 
     tags = TagListSerializerField()
 
@@ -636,7 +640,9 @@ class ProjectInfrastructureSerializer(CustomModelSerializer):
         many=True,
         exclude=["id", "project", "operator", "client"],
     )
-    cloud = TransientServerSerializer(source="transientserver_set", many=True, exclude=["id", "project", "operator"])
+    cloud = TransientServerSerializer(
+        source="transientserver_set", many=True, exclude=["id", "project", "operator"]
+    )
     servers = ServerHistorySerializer(
         source="serverhistory_set",
         many=True,
@@ -693,12 +699,24 @@ class ReportDataSerializer(CustomModelSerializer):
         ]
     )
     client = ClientSerializer(source="project.client")
-    team = ProjectAssignmentSerializer(source="project.projectassignment_set", many=True, exclude=["id", "project"])
-    objectives = ProjectObjectiveSerializer(source="project.projectobjective_set", many=True, exclude=["id", "project"])
-    targets = ProjectTargetSerializer(source="project.projecttarget_set", many=True, exclude=["id", "project"])
-    scope = ProjectScopeSerializer(source="project.projectscope_set", many=True, exclude=["id", "project"])
-    deconflictions = DeconflictionSerializer(source="project.deconfliction_set", many=True, exclude=["id", "project"])
-    whitecards = WhiteCardSerializer(source="project.whitecard_set", many=True, exclude=["id", "project"])
+    team = ProjectAssignmentSerializer(
+        source="project.projectassignment_set", many=True, exclude=["id", "project"]
+    )
+    objectives = ProjectObjectiveSerializer(
+        source="project.projectobjective_set", many=True, exclude=["id", "project"]
+    )
+    targets = ProjectTargetSerializer(
+        source="project.projecttarget_set", many=True, exclude=["id", "project"]
+    )
+    scope = ProjectScopeSerializer(
+        source="project.projectscope_set", many=True, exclude=["id", "project"]
+    )
+    deconflictions = DeconflictionSerializer(
+        source="project.deconfliction_set", many=True, exclude=["id", "project"]
+    )
+    whitecards = WhiteCardSerializer(
+        source="project.whitecard_set", many=True, exclude=["id", "project"]
+    )
     infrastructure = ProjectInfrastructureSerializer(source="project")
     findings = FindingLinkSerializer(
         source="reportfindinglink_set",
@@ -792,27 +810,27 @@ class ReportDataSerializer(CustomModelSerializer):
                     count += 1
                 return count
 
-            if severity == Severity.CRIT.value.lower():
+            if severity == Severity.CRIT.value.lower() and finding["complete"] is True:
                 critical_findings += 1
                 open_critical_findings = _increment_open_finding(
                     open_critical_findings, finding_status, open_status, accepted_status
                 )
-            elif severity == Severity.HIGH.value.lower():
+            elif severity == Severity.HIGH.value.lower() and finding["complete"] is True:
                 high_findings += 1
                 open_high_findings = _increment_open_finding(
                     open_high_findings, finding_status, open_status, accepted_status
                 )
-            elif severity == Severity.MED.value.lower():
+            elif severity == Severity.MED.value.lower() and finding["complete"] is True:
                 medium_findings += 1
                 open_medium_findings = _increment_open_finding(
                     open_medium_findings, finding_status, open_status, accepted_status
                 )
-            elif severity == Severity.LOW.value.lower():
+            elif severity == Severity.LOW.value.lower() and finding["complete"] is True:
                 low_findings += 1
                 open_low_findings = _increment_open_finding(
                     open_low_findings, finding_status, open_status, accepted_status
                 )
-            elif severity == Severity.BP.value.lower():
+            elif severity == Severity.BP.value.lower() and finding["complete"] is True:
                 info_findings += 1
                 open_info_findings = _increment_open_finding(
                     open_info_findings, finding_status, open_status, accepted_status
@@ -862,27 +880,28 @@ class ReportDataSerializer(CustomModelSerializer):
         chart_data = []
         severity_indexes = list(reversed([e.value.lower() for e in Severity]))
         for finding in findings:
-            # Have to strip HTML because it's in a field that takes HTML
-            category = strip_html(finding["replication_steps"])
-            # Replace spaces with newlines to wrap x-axis labels
-            category = category.replace(" ", "\n")
+            if finding["complete"] is True:
+                # Have to strip HTML because it's in a field that takes HTML
+                category = strip_html(finding["replication_steps"])
+                # Replace spaces with newlines to wrap x-axis labels
+                category = category.replace(" ", "\n")
 
-            severity = finding["severity"].lower()
-            category_found = False
+                severity = finding["severity"].lower()
+                category_found = False
 
-            for data in chart_data:
-                if data[0] == category:
-                    # Update the finding count for the severity
-                    # +1 in the index is to adjust as the label is in the first index
+                for data in chart_data:
+                    if data[0] == category:
+                        # Update the finding count for the severity
+                        # +1 in the index is to adjust as the label is in the first index
+                        data[severity_indexes.index(severity) + 1] += 1
+                        category_found = True
+                        break
+
+                if not category_found:
+                    # Add new entry with category label and all zeros
+                    data = [category] + [0] * 5
                     data[severity_indexes.index(severity) + 1] += 1
-                    category_found = True
-                    break
-
-            if not category_found:
-                # Add new entry with category label and all zeros
-                data = [category] + [0] * 5
-                data[severity_indexes.index(severity) + 1] += 1
-                chart_data.append(data)
+                    chart_data.append(data)
         rep["totals"]["chart_data"] = chart_data
 
         return rep

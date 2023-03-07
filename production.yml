@@ -55,6 +55,7 @@ services:
     volumes:
       - production_staticfiles:/app/staticfiles
       - production_data:/app/ghostwriter/media
+      - /usr/local/share/fonts/Arial\ Narrow.ttf:/usr/share/fonts/truetype/msttcorefonts/Arial_Narrow.ttf
 
   postgres:
     build:

@@ -32,7 +32,7 @@ def _create_bell_curve(ax, x_normdist, plotdata):
     # Code came from https://stackoverflow.com/questions/54422579/efficient-way-of-shading-multiple-regions-under-curve
     # Orange bell line
     y = norm.pdf(x_normdist, plotdata[MEAN], plotdata[SD])
-    ax.plot(x_normdist, y, color=ORANGE)
+    ax.plot(x_normdist, y, color=ORANGE, lw=2)
 
     regions = _get_regions(x_normdist, plotdata)
     # set alpha values - different shades for regions
@@ -122,7 +122,7 @@ def _annotate_score(sd_score, y, ax, x_shift=0, y_shift=0):
 
 
 def _plot_score(sd_score, ax, plotdata, x_shift=0, y_shift=0):
-    sd_score = round(sd_score, 1)
+    sd_score = round(sd_score, 2)
     y = norm.pdf(sd_score, plotdata[MEAN], plotdata[SD])
     ax.scatter(sd_score, y, s=64, color="white", ec=ORANGE, zorder=10)
     _annotate_score(sd_score, y, ax, x_shift, y_shift)
@@ -147,7 +147,7 @@ def build_sd_graph(sd_score):
     _plot_score(sd_score, ax, plotdata)
 
     # Shrink figure to be close to current size in Word template
-    fig.set_size_inches(4.5, 1.85)
+    fig.set_size_inches(6, 2.5)
     # Think of DPI as zooming in on the image making it easier to see
-    fig.set_dpi(150)
+    fig.set_dpi(200)
     return fig

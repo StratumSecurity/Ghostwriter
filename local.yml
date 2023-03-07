@@ -3,6 +3,8 @@ version: "3"
 volumes:
   local_postgres_data: {}
   local_postgres_data_backups: {}
+  local_staticfiles: {}
+  local_data: {}
 
 services:
   django: &django
@@ -14,6 +16,10 @@ services:
       - postgres
     volumes:
       - .:/app
+      - ./ssl:/ssl
+      - local_staticfiles:/app/staticfiles
+      - local_data:/app/ghostwriter/media
+      - /usr/local/share/fonts/Arial\ Narrow.ttf:/usr/share/fonts/truetype/msttcorefonts/Arial_Narrow.ttf
     labels:
       name: ghostwriter_django
     environment:
