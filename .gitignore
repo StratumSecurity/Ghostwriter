@@ -286,3 +286,4 @@ ghostwriter-cli
 # Local config files
 config/settings/*
 
+gitSync.sh
