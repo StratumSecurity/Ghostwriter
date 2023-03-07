@@ -284,4 +284,5 @@ cypress/*
 ghostwriter-cli
 
 # Local config files
-config/settings/*
+#config/settings/*
+
