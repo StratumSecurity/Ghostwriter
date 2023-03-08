@@ -14,6 +14,10 @@ import re
 from datetime import timedelta
 from string import ascii_letters
 
+# Django Imports
+from django.conf import settings
+from django.utils.dateformat import format as dateformat
+
 # 3rd Party Libraries
 import docx
 import jinja2
@@ -22,10 +26,6 @@ import pptx
 from bs4 import BeautifulSoup, NavigableString
 from dateutil.parser import parse as parse_datetime
 from dateutil.parser._parser import ParserError
-
-# Django Imports
-from django.conf import settings
-from django.utils.dateformat import format as dateformat
 from docx.enum.dml import MSO_THEME_COLOR_INDEX
 from docx.enum.style import WD_STYLE_TYPE
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_COLOR_INDEX
@@ -56,8 +56,8 @@ from ghostwriter.stratum.enums import (
     Severity,
     get_value_from_key,
 )
-from ghostwriter.stratum.findings_chart import build_chart, build_pie_chart
-from ghostwriter.stratum.sd_graph import build_sd_graph
+from ghostwriter.stratum.findings_chart import build_bar_chart, build_pie_chart
+from ghostwriter.stratum.sd_graph import build_sd_graph, plt
 
 # Using __name__ resolves to ghostwriter.modules.reporting
 logger = logging.getLogger(__name__)
@@ -242,16 +242,18 @@ def sort_findings(findings):
         Severity.HIGH.value.lower(): 65,
         Severity.MED.value.lower(): 20,
         Severity.LOW.value.lower(): 5,
-        Severity.BP.value.lower(): 1
+        Severity.BP.value.lower(): 1,
     }
     diff_of_exploit = {
         Severity.LOW.value.lower(): 3,
         Severity.MED.value.lower(): 2,
-        Severity.HIGH.value.lower(): 1
+        Severity.HIGH.value.lower(): 1,
     }
 
     for finding in findings:
-        weight = severities[finding["severity"].lower()] * diff_of_exploit.get(strip_html(finding["host_detection_techniques"]).lower(), 1)
+        weight = severities[finding["severity"].lower()] * diff_of_exploit.get(
+            strip_html(finding["host_detection_techniques"]).lower(), 1
+        )
         finding["weight"] = weight
 
     return sorted(findings, key=lambda f: f["weight"], reverse=True)
@@ -885,22 +887,24 @@ class Reportwriter:
     def _add_image(self, par, fig, filename, pad=0.1):
         # Build the filepath to save the figure and add to report
         # Strip special chars except for - and _
-        allowed = ascii_letters + "-"+"_"
-        new_file_name = ''.join(list(filter(allowed.__contains__, filename)))
+        allowed = ascii_letters + "-" + "_"
+        new_file_name = "".join(list(filter(allowed.__contains__, filename)))
         directory = f'{settings.MEDIA_ROOT}/evidence/{self.report_json["project"]["id"]}'
 
         if not os.path.exists(directory):
             # Create a new directory because it does not exist
             os.makedirs(directory)
 
-        filepath = f'{directory}/{new_file_name}.png'
+        filepath = f"{directory}/{new_file_name}.png"
         # Save the figure as a png to the file system under the report directory to be saved into the report
-        fig.savefig(filepath,pad_inches=pad, bbox_inches='tight', dpi=fig.get_dpi())
+        fig.savefig(filepath, pad_inches=pad, bbox_inches="tight", dpi=fig.get_dpi())
 
         # Replace figure in report with saved image
         # Use the filename as a label for replacing the text with the image
         run = par.add_run()
         run.add_picture(filepath, width=Inches(fig.get_figwidth()), height=Inches(fig.get_figheight()))
+        # Close the current figure window to clear up memory
+        plt.close(fig)
 
     def _replace_and_write(self, text, par, finding, styles=ReportConstants.DEFAULT_STYLE_VALUES.copy()):
         """
@@ -976,14 +980,16 @@ class Reportwriter:
                     if keyword == "chart_bar":
                         chart_data = self.report_json["totals"]["chart_data"]
                         par.alignment = WD_ALIGN_PARAGRAPH.LEFT
-                        self._add_image(par, build_chart(chart_data), keyword)
+                        self._add_image(par, build_bar_chart(chart_data), keyword)
                         return par
-                    elif keyword == "chart_sdscore":
+
+                    if keyword == "chart_sdscore":
                         sd_score = self.report_json["totals"]["sd_score"]
                         par.alignment = WD_ALIGN_PARAGRAPH.CENTER
                         self._add_image(par, build_sd_graph(sd_score), keyword)
                         return par
-                    elif keyword == "chart_pie":
+
+                    if keyword == "chart_pie":
                         chart_data = self.report_json["totals"]["chart_data"]
                         total_findings = self.report_json["totals"]["findings"]
                         self._add_image(par, build_pie_chart(chart_data, total_findings), keyword)
@@ -1645,11 +1651,11 @@ class Reportwriter:
             finding["replication_steps_rt"] = render_subdocument(finding["replication_steps"], finding)
             finding["host_detection_techniques_rt"] = RichText(
                 strip_html(finding["host_detection_techniques"]),
-                color=get_value_from_key(DifficultyExploitColor, strip_html(finding["host_detection_techniques"]))
+                color=get_value_from_key(DifficultyExploitColor, strip_html(finding["host_detection_techniques"]),)
             )
             finding["network_detection_techniques_rt"] = RichText(
                 strip_html(finding["network_detection_techniques"]),
-                color=get_value_from_key(FindingStatusColor, strip_html(finding["network_detection_techniques"]))
+                color=get_value_from_key(FindingStatusColor, strip_html(finding["network_detection_techniques"]),)
             )
             finding["references_rt"] = render_subdocument(finding["references"], finding)
 

@@ -7,7 +7,7 @@ MEAN = "mean"
 SD = "sd"
 BLUE = "#14588F"
 ORANGE = "#EC6403"
-FONT_FAMILY = "Liberation Sans Narrow"
+FONT_FAMILY = "Arial Narrow"
 
 
 def _get_regions(x_normdist, plotdata):

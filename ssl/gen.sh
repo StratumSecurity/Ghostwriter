@@ -1,0 +1,1 @@
+openssl req -config cert.cnf -newkey rsa -keyout ghostwriter.key -x509 -days 365 -out ghostwriter.crt

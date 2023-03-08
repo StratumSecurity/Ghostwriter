@@ -3,13 +3,13 @@
 # Standard Libraries
 from datetime import datetime
 
-# 3rd Party Libraries
-import pytz
-from bs4 import BeautifulSoup
-
 # Django Imports
 from django.conf import settings
 from django.utils import dateformat
+
+# 3rd Party Libraries
+import pytz
+from bs4 import BeautifulSoup
 from rest_framework import serializers
 from rest_framework.serializers import (
     RelatedField,
@@ -749,8 +749,13 @@ class ReportDataSerializer(CustomModelSerializer):
         # Get the standard JSON from ``super()``
         rep = super().to_representation(instance)
 
+        # Filter findings that are marked as complete
+        # This field is used for publishing findings to a report when they are ready
+        # This field is also used to exclude findings from a report - according to netsec experience with customers
+        findings = list(map(lambda finding: finding["complete"], rep["findings"]))
+
         # Calculate totals for various values
-        total_findings = len(rep["findings"])
+        total_findings = len(findings)
         total_objectives = len(rep["objectives"])
         total_team = len(rep["team"])
         total_targets = len(rep["targets"])
@@ -776,7 +781,6 @@ class ReportDataSerializer(CustomModelSerializer):
         open_medium_findings = 0
         open_low_findings = 0
         open_info_findings = 0
-        findings = rep["findings"]
 
         for finding in findings:
             finding["ordering"] = finding_order
