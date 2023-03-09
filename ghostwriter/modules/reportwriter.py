@@ -884,7 +884,7 @@ class Reportwriter:
             else:
                 font.superscript = styles["superscript"]
 
-    def _add_image(self, par, fig, filename, pad=0.1):
+    def _add_image(self, par, fig, filename, pad=0.1, image_width=None, image_height=None):
         # Build the filepath to save the figure and add to report
         # Strip special chars except for - and _
         allowed = ascii_letters + "-" + "_"
@@ -902,7 +902,14 @@ class Reportwriter:
         # Replace figure in report with saved image
         # Use the filename as a label for replacing the text with the image
         run = par.add_run()
-        run.add_picture(filepath, width=Inches(fig.get_figwidth()), height=Inches(fig.get_figheight()))
+        width = Inches(image_width) if image_width else None
+        height = Inches(image_height) if image_height else None
+
+        # The image_width and image_height are separate if we want to change the image
+        # dimensions but not the figure
+        # For example, we only care about setting the figure height to a specific value
+        # but don't care about the width of the image
+        run.add_picture(filepath, width=width, height=height)
         # Close the current figure window to clear up memory
         plt.close(fig)
 
@@ -978,21 +985,22 @@ class Reportwriter:
                         return par
 
                     if keyword == "chart_bar":
-                        chart_data = self.report_json["totals"]["chart_data"]
                         par.alignment = WD_ALIGN_PARAGRAPH.LEFT
-                        self._add_image(par, build_bar_chart(chart_data), keyword)
+                        fig = build_bar_chart(self.report_json["totals"]["chart_data"])
+                        self._add_image(par, fig, keyword, image_width=fig.get_figwidth(), image_height=fig.get_figheight())
                         return par
 
                     if keyword == "chart_sdscore":
-                        sd_score = self.report_json["totals"]["sd_score"]
                         par.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                        self._add_image(par, build_sd_graph(sd_score), keyword)
+                        fig = build_sd_graph(self.report_json["totals"]["sd_score"])
+                        self._add_image(par, fig, keyword, image_width=fig.get_figwidth(), image_height=fig.get_figheight())
                         return par
 
                     if keyword == "chart_pie":
                         chart_data = self.report_json["totals"]["chart_data"]
                         total_findings = self.report_json["totals"]["findings"]
-                        self._add_image(par, build_pie_chart(chart_data, total_findings), keyword)
+                        fig = build_pie_chart(chart_data, total_findings)
+                        self._add_image(par, fig, keyword, image_height=fig.get_figheight())
                         return par
 
                     # Handle evidence files

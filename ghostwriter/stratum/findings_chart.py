@@ -14,7 +14,7 @@ class CalcCol(Enum):
 
 
 FONT_FAMILY = "Arial Narrow"
-FONT_SIZE = 8
+FONT_SIZE = 9
 
 
 def _build_axis_style(ax, max_y):
@@ -187,7 +187,7 @@ def build_pie_chart(report_data, total_findings):
             "#262262",
         ],
         textprops={
-            "size": FONT_SIZE + 9,
+            "size": FONT_SIZE,
             "weight": "bold",
             "family": FONT_FAMILY,
             "horizontalalignment": "center",
@@ -200,5 +200,6 @@ def build_pie_chart(report_data, total_findings):
             text.set_color("white")
 
     fig = ax.get_figure()
+    fig.set_figheight(2.8)
     fig.set_dpi(200)
     return fig
