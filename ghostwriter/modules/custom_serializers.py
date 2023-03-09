@@ -752,7 +752,9 @@ class ReportDataSerializer(CustomModelSerializer):
         # Filter findings that are marked as complete
         # This field is used for publishing findings to a report when they are ready
         # This field is also used to exclude findings from a report - according to netsec experience with customers
-        findings = list(map(lambda finding: finding["complete"], rep["findings"]))
+        findings = list(filter(lambda finding: finding["complete"], rep["findings"]))
+        # Reassigns to make sure the findings ref in templates will be the filtered completed findings
+        rep["findings"] = findings
 
         # Calculate totals for various values
         total_findings = len(findings)

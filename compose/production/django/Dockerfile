@@ -17,10 +17,11 @@ RUN apk --no-cache add build-base curl \
     # Dependencies for scipy for custom code
     && apk --no-cache add gfortran openblas-dev \
     # Pull down Arial Narrow fonts from S3 bucket
-    && curl -O https://stratum-ghostwriter.s3.amazonaws.com/Arial+Narrow.ttf --output-dir /usr/local/share/fonts/ \
-    && curl -O https://stratum-ghostwriter.s3.amazonaws.com/Arial+Narrow+Bold.ttf --output-dir /usr/local/share/fonts/ \
-    && curl -O https://stratum-ghostwriter.s3.amazonaws.com/Arial+Narrow+Bold+Italic.ttf --output-dir /usr/local/share/fonts/ \
-    && curl -O https://stratum-ghostwriter.s3.amazonaws.com/Arial+Narrow+Italic.ttf --output-dir /usr/local/share/fonts/ \
+    && mkdir -p ~/.fonts \
+    && curl -O https://stratum-ghostwriter.s3.amazonaws.com/ArialNarrow.ttf --output-dir ~/.fonts \
+    && curl -O https://stratum-ghostwriter.s3.amazonaws.com/ArialNarrowBold.ttf --output-dir ~/.fonts \
+    && curl -O https://stratum-ghostwriter.s3.amazonaws.com/ArialNarrowBoldItalic.ttf --output-dir ~/.fonts \
+    && curl -O https://stratum-ghostwriter.s3.amazonaws.com/ArialNarrowItalic.ttf --output-dir ~/.fonts \
     # Refresh the font cache with the new font installed
     && fc-cache -f \
     # Rust and Cargo required by the ``cryptography`` Python package
