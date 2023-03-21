@@ -92,7 +92,7 @@ services:
       - production_data:/app/media
       - production_staticfiles:/app/staticfiles
       - ./compose/production/nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./ssl:/ssl
+      - /opt/ssl:/ssl
     labels:
       name: ghostwriter_nginx
     ports:
@@ -147,7 +147,7 @@ services:
       - "9691:9691"
     volumes:
       - ./hasura-docker/metadata:/metadata
-      - ./ssl:/etc/ssl/certs
+      - /opt/ssl:/etc/ssl/certs
     logging:
       driver: "json-file"
       options:
