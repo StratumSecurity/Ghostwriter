@@ -890,18 +890,18 @@ class ReportDataSerializer(CustomModelSerializer):
         netsec_external_open_findings = _get_open_findings(netsec_external_findings)
 
         netsec_internal_total = _get_total(
-            _get_findings_by_severity(netsec_internal_open_findings, Severity.CRIT.value),
-            _get_findings_by_severity(netsec_internal_open_findings, Severity.HIGH.value),
-            _get_findings_by_severity(netsec_internal_open_findings, Severity.MED.value),
-            _get_findings_by_severity(netsec_internal_open_findings, Severity.LOW.value),
-            _get_findings_by_severity(netsec_internal_open_findings, Severity.BP.value),
+            len(_get_findings_by_severity(netsec_internal_open_findings, Severity.CRIT.value)),
+            len(_get_findings_by_severity(netsec_internal_open_findings, Severity.HIGH.value)),
+            len(_get_findings_by_severity(netsec_internal_open_findings, Severity.MED.value)),
+            len(_get_findings_by_severity(netsec_internal_open_findings, Severity.LOW.value)),
+            len(_get_findings_by_severity(netsec_internal_open_findings, Severity.BP.value)),
         )
         netsec_external_total = _get_total(
-            _get_findings_by_severity(netsec_external_open_findings, Severity.CRIT.value),
-            _get_findings_by_severity(netsec_external_open_findings, Severity.HIGH.value),
-            _get_findings_by_severity(netsec_external_open_findings, Severity.MED.value),
-            _get_findings_by_severity(netsec_external_open_findings, Severity.LOW.value),
-            _get_findings_by_severity(netsec_external_open_findings, Severity.BP.value),
+            len(_get_findings_by_severity(netsec_external_open_findings, Severity.CRIT.value)),
+            len(_get_findings_by_severity(netsec_external_open_findings, Severity.HIGH.value)),
+            len(_get_findings_by_severity(netsec_external_open_findings, Severity.MED.value)),
+            len(_get_findings_by_severity(netsec_external_open_findings, Severity.LOW.value)),
+            len(_get_findings_by_severity(netsec_external_open_findings, Severity.BP.value)),
         )
 
         # Service label, total, mean, and standard deviation
