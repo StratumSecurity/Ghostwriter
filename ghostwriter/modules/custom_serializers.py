@@ -852,7 +852,7 @@ class ReportDataSerializer(CustomModelSerializer):
         rep["totals"]["targets"] = total_targets
 
         def _get_total(crit_findings, high_findings, med_findings, low_findings, info_findings):
-            return  crit_findings * 25 + high_findings * 10 + med_findings * 5 + low_findings * 3 + info_findings * 1
+            return crit_findings * 25 + high_findings * 10 + med_findings * 5 + low_findings * 3 + info_findings * 1
 
         def _get_score(total, mean, std):
             return (mean - total) / std
@@ -866,18 +866,20 @@ class ReportDataSerializer(CustomModelSerializer):
 
             def _is_open(status):
                 return status.lower() == open_status or status.lower() == accepted_status
-            return list(filter(lambda f: _is_open(strip_html(f["network_detection_techniques"])), findings))
+            return list(filter(lambda f: _is_open(strip_html(f["network_detection_techniques"])), findings,))
 
         def _get_findings_by_severity(findings, severity):
             return list(filter(lambda f: f["severity"].lower() == severity.lower(), findings))
-
 
         # Calculate SD Score - in statistics this is called Z-Score
         # This one is the total for all findings in the report
         # Netsec needs separate totals for internal and external in the combo reports
         findings_score_total = _get_total(
-            open_critical_findings, open_high_findings,
-            open_medium_findings, open_low_findings, open_info_findings,
+            open_critical_findings,
+            open_high_findings,
+            open_medium_findings,
+            open_low_findings,
+            open_info_findings,
         )
 
         netsec_internal = "internal"
@@ -916,7 +918,7 @@ class ReportDataSerializer(CustomModelSerializer):
             ("physical", findings_score_total, 64.30909091, 56.55371468),
         ]
         for d in score_type_data:
-            rep["totals"]["sd_score_"+d[0]] = _get_score(d[1], d[2], d[3])
+            rep["totals"]["sd_score_" + d[0]] = _get_score(d[1], d[2], d[3])
 
         # Calculate the findings chart data variable
         def _get_chart_data(findings):
@@ -947,6 +949,14 @@ class ReportDataSerializer(CustomModelSerializer):
             return chart_data
 
         rep["totals"]["chart_data"] = _get_chart_data(findings)
-        rep["totals"]["chart_data_internal"] = _get_chart_data(netsec_internal_findings)
-        rep["totals"]["chart_data_external"] = _get_chart_data(netsec_external_findings)
+
+        # Check if there are any netsec findings, GW will hit this on report generation
+        # for appsec reports where both are empty arrays and throw an error on report generation
+        # Use all findings marked in report for these values in those cases
+        rep["totals"]["chart_data_internal"] = _get_chart_data(
+            netsec_internal_findings if netsec_internal_findings else findings
+        )
+        rep["totals"]["chart_data_external"] = _get_chart_data(
+            netsec_external_findings if netsec_external_findings else findings
+        )
         return rep
