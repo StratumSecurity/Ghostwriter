@@ -984,23 +984,72 @@ class Reportwriter:
                         # Captions are on their own line so return
                         return par
 
-                    if keyword == "chart_bar":
+                    # Bar charts
+                    def _build_bar_chart(self, par, keyword, label):
                         par.alignment = WD_ALIGN_PARAGRAPH.LEFT
-                        fig = build_bar_chart(self.report_json["totals"]["chart_data"])
+                        fig = build_bar_chart(self.report_json["totals"][label])
                         self._add_image(par, fig, keyword, image_width=fig.get_figwidth(), image_height=fig.get_figheight())
+
+                    if keyword == "chart_bar":
+                        _build_bar_chart(self, par, keyword, "chart_data")
                         return par
 
-                    if keyword == "chart_sdscore":
+                    if keyword == "chart_bar_external":
+                        _build_bar_chart(self, par, keyword, "chart_data_external")
+                        return par
+
+                    if keyword == "chart_bar_internal":
+                        _build_bar_chart(self, par, keyword, "chart_data_internal")
+                        return par
+
+                    # SD Graphs
+                    def _build_sd_graph(self, par, keyword, label):
                         par.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                        fig = build_sd_graph(self.report_json["totals"]["sd_score"])
+                        fig = build_sd_graph(self.report_json["totals"][label])
                         self._add_image(par, fig, keyword, image_width=fig.get_figwidth(), image_height=fig.get_figheight())
+
+                    # Unfortunately had to register new tags until GW has a proper way to build charts
+                    # into reports
+                    if keyword == "chart_sdscore_appsec":
+                        _build_sd_graph(self, par, keyword, "sd_score_appsec")
                         return par
 
-                    if keyword == "chart_pie":
-                        chart_data = self.report_json["totals"]["chart_data"]
-                        total_findings = self.report_json["totals"]["findings"]
+                    if keyword == "chart_sdscore_cloud":
+                        _build_sd_graph(self, par, keyword, "sd_score_cloud")
+                        return par
+
+                    if keyword == "chart_sdscore_external":
+                        _build_sd_graph(self, par, keyword, "sd_score_external")
+                        return par
+
+                    if keyword == "chart_sdscore_internal":
+                        _build_sd_graph(self, par, keyword, "sd_score_internal")
+                        return par
+
+                    if keyword == "chart_sdscore_physical":
+                        _build_sd_graph(self, par, keyword, "sd_score_physical")
+                        return par
+
+                    if keyword == "chart_sdscore_wireless":
+                        _build_sd_graph(self, par, keyword, "sd_score_wireless")
+                        return par
+
+                    # Pie charts
+                    def _build_pie(self, par, keyword, label):
+                        chart_data = self.report_json["totals"][label]
+                        total_findings = 0
+                        for r in chart_data:
+                            total_findings += sum(r[1:])
+
                         fig = build_pie_chart(chart_data, total_findings)
                         self._add_image(par, fig, keyword, image_height=fig.get_figheight())
+
+                    if keyword == "chart_pie_internal":
+                        _build_pie(self, par, keyword, "chart_data_internal")
+                        return par
+
+                    if keyword == "chart_pie_external":
+                        _build_pie(self, par, keyword, "chart_data_external")
                         return par
 
                     # Handle evidence files
@@ -1674,20 +1723,54 @@ class Reportwriter:
         # Project Notes
         context["project"]["note_rt"] = render_subdocument(context["project"]["note"], finding=None)
 
-        # Project Findings Charts
+        # Bar Charts
         context["project"]["chart_bar"] = "<p>{{.chart_bar}}</p>"
         context["project"]["chart_bar_rt"] = render_subdocument(
             context["project"]["chart_bar"], finding=None
         )
-
-        context["project"]["chart_sdscore"] = "<p>{{.chart_sdscore}}</p>"
-        context["project"]["chart_sdscore_rt"] = render_subdocument(
-            context["project"]["chart_sdscore"], finding=None
+        context["project"]["chart_bar_external"] = "<p>{{.chart_bar_external}}</p>"
+        context["project"]["chart_bar_external_rt"] = render_subdocument(
+            context["project"]["chart_bar_external"], finding=None
+        )
+        context["project"]["chart_bar_internal"] = "<p>{{.chart_bar_internal}}</p>"
+        context["project"]["chart_bar_internal_rt"] = render_subdocument(
+            context["project"]["chart_bar_internal"], finding=None
         )
 
-        context["project"]["chart_pie"] = "<p>{{.chart_pie}}</p>"
-        context["project"]["chart_pie_rt"] = render_subdocument(
-            context["project"]["chart_pie"], finding=None
+        # SD Graphs
+        context["project"]["chart_sdscore_appsec"] = "<p>{{.chart_sdscore_appsec}}</p>"
+        context["project"]["chart_sdscore_appsec_rt"] = render_subdocument(
+            context["project"]["chart_sdscore_appsec"], finding=None
+        )
+        context["project"]["chart_sdscore_cloud"] = "<p>{{.chart_sdscore_cloud}}</p>"
+        context["project"]["chart_sdscore_cloud_rt"] = render_subdocument(
+            context["project"]["chart_sdscore_cloud"], finding=None
+        )
+        context["project"]["chart_sdscore_wireless"] = "<p>{{.chart_sdscore_wireless}}</p>"
+        context["project"]["chart_sdscore_wireless_rt"] = render_subdocument(
+            context["project"]["chart_sdscore_wireless"], finding=None
+        )
+        context["project"]["chart_sdscore_external"] = "<p>{{.chart_sdscore_external}}</p>"
+        context["project"]["chart_sdscore_external_rt"] = render_subdocument(
+            context["project"]["chart_sdscore_external"], finding=None
+        )
+        context["project"]["chart_sdscore_internal"] = "<p>{{.chart_sdscore_internal}}</p>"
+        context["project"]["chart_sdscore_internal_rt"] = render_subdocument(
+            context["project"]["chart_sdscore_internal"], finding=None
+        )
+        context["project"]["chart_sdscore_physical"] = "<p>{{.chart_sdscore_physical}}</p>"
+        context["project"]["chart_sdscore_physical_rt"] = render_subdocument(
+            context["project"]["chart_sdscore_physical"], finding=None
+        )
+
+        # Pie Charts
+        context["project"]["chart_pie_external"] = "<p>{{.chart_pie_external}}</p>"
+        context["project"]["chart_pie_external_rt"] = render_subdocument(
+            context["project"]["chart_pie_external"], finding=None
+        )
+        context["project"]["chart_pie_internal"] = "<p>{{.chart_pie_internal}}</p>"
+        context["project"]["chart_pie_internal_rt"] = render_subdocument(
+            context["project"]["chart_pie_internal"], finding=None
         )
 
         # Assignments
