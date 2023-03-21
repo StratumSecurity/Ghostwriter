@@ -51,13 +51,13 @@ def _label_x_axis(ax):
     labels = ax.get_xticklabels()
     labels = [item.get_text() for item in labels]
 
-    labels[1] = "-3\n|\nFar Below Average\n"
-    labels[2] = "-2"
+    labels[1] = "-3"
+    labels[2] = "-2\n|\nFar Below Average\n"
     labels[3] = "-1"
     labels[4] = "0\n|\nAverage\n"
     labels[5] = "1"
-    labels[6] = "2"
-    labels[7] = "3\n|\nFar Above Average\n"
+    labels[6] = "2\n|\nFar Above Average\n"
+    labels[7] = "3"
     ax.set_xticks(
         ticks=locs,
         labels=labels,
