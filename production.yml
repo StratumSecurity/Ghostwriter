@@ -55,6 +55,8 @@ services:
     volumes:
       - production_staticfiles:/app/staticfiles
       - production_data:/app/ghostwriter/media
+      # install on docker host via: sudo apt install ttf-mscorefonts-installer -y
+      #- /usr/share/fonts/truetype/msttcorefonts/:/usr/share/fonts/truetype/msttcorefonts/
 
   postgres:
     build:
