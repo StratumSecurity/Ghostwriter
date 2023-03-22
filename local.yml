@@ -16,9 +16,11 @@ services:
       - postgres
     volumes:
       - .:/app
-      - ./ssl:/ssl
+      - /opt/ssl:/ssl
       - local_staticfiles:/app/staticfiles
       - local_data:/app/ghostwriter/media
+      # install on docker host via: sudo apt install ttf-mscorefonts-installer -y
+      #- /usr/share/fonts/truetype/msttcorefonts/:/usr/share/fonts/truetype/msttcorefonts/
     labels:
       name: ghostwriter_django
     environment:
