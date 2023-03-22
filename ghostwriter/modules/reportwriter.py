@@ -988,7 +988,9 @@ class Reportwriter:
                     def _build_bar_chart(self, par, keyword, label):
                         par.alignment = WD_ALIGN_PARAGRAPH.LEFT
                         fig = build_bar_chart(self.report_json["totals"][label])
-                        self._add_image(par, fig, keyword, image_width=fig.get_figwidth(), image_height=fig.get_figheight())
+                        # Subtracting - 3.5 from the width to make it fit perfectly on the page with the font sizes
+                        # to prevent overlapping on the x-axis and make it more readable
+                        self._add_image(par, fig, keyword, image_width=fig.get_figwidth() - 3.5, image_height=fig.get_figheight())
 
                     if keyword == "chart_bar":
                         _build_bar_chart(self, par, keyword, "chart_data")
@@ -1006,7 +1008,7 @@ class Reportwriter:
                     def _build_sd_graph(self, par, keyword, label):
                         par.alignment = WD_ALIGN_PARAGRAPH.CENTER
                         fig = build_sd_graph(self.report_json["totals"][label])
-                        self._add_image(par, fig, keyword, image_width=fig.get_figwidth(), image_height=fig.get_figheight())
+                        self._add_image(par, fig, keyword, image_height=fig.get_figheight())
 
                     # Unfortunately had to register new tags until GW has a proper way to build charts
                     # into reports

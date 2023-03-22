@@ -19,17 +19,18 @@ FONT_SIZE = 9
 
 def _build_axis_style(ax, max_y):
     labelpad = 10
+    label_font_size = FONT_SIZE + 3
     ax.set_xlabel(
         "Findings Category",
         fontfamily=FONT_FAMILY,
-        fontsize=FONT_SIZE,
+        fontsize=label_font_size,
         fontweight="bold",
         labelpad=labelpad,
     )
     ax.set_ylabel(
         "Total Number of Findings",
         fontfamily=FONT_FAMILY,
-        fontsize=FONT_SIZE,
+        fontsize=label_font_size,
         fontweight="bold",
         labelpad=labelpad,
     )
@@ -43,14 +44,14 @@ def _build_axis_style(ax, max_y):
     ax.spines.bottom.set_color(spine_color)
 
 
-def _build_legend_style(ax, fig):
+def _build_legend_style(ax):
     # Set the right font for the legend, remove frame, horizontal legend,
     # and anchor in the upper right corner outside the bar chart to prevent bars being close to legend
     h, l = ax.get_legend_handles_labels()
     legend = ax.legend(
         reversed(h),
         reversed(l),
-        prop={"family": FONT_FAMILY, "size": FONT_SIZE},
+        prop={"family": FONT_FAMILY, "size": FONT_SIZE + 2},
         loc="upper right",
         ncol=5,
         columnspacing=1,
@@ -59,7 +60,7 @@ def _build_legend_style(ax, fig):
     )
     legend.set_frame_on(False)
     for h in legend.legendHandles:
-        h.set_width(5)
+        h.set_width(8)
 
 
 def _label_bars(ax):
@@ -74,7 +75,7 @@ def _label_bars(ax):
             color="white",
             fontweight="bold",
             fontfamily=FONT_FAMILY,
-            fontsize=FONT_SIZE + 1,
+            fontsize=FONT_SIZE + 3,
         )
 
 
@@ -117,9 +118,10 @@ def build_bar_chart(report_data):
     # Font size subtraction is used to prevent overlapping x-axis labels
     # When finding categories exceeds 6, we need to shrink the font size some more on the labels
     if len(df.index) > 6:
-        label_font_size = FONT_SIZE - 3
+        # Subtracting by 0.5 on font size is the best when all finding categories are present to prevent overlapping
+        label_font_size = FONT_SIZE - 0.5
     else:
-        label_font_size = FONT_SIZE - 1
+        label_font_size = FONT_SIZE
 
     ax = df.plot(
         x=category_label,
@@ -144,11 +146,11 @@ def build_bar_chart(report_data):
 
     # Shrink figure to be close to current size in Word template
     # Current literals set make the figure fit on the page correctly
-    fig.set_size_inches(6.3, 2.8)
+    fig.set_size_inches(10, 2.9)
     # Think of DPI as zooming in on the image making it easier to see
     fig.set_dpi(200)
 
-    _build_legend_style(ax, fig)
+    _build_legend_style(ax)
     _label_bars(ax)
     return fig
 
