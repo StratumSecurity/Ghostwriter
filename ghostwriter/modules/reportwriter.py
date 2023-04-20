@@ -715,9 +715,9 @@ class Reportwriter:
                     par.alignment = WD_ALIGN_PARAGRAPH.CENTER
                     run = par.add_run()
 
-                    # Add a +1 space point before the image to not overlap onto the table header
+                    # Add space point before the image to not overlap onto the table header
                     f = par.paragraph_format
-                    f.space_before = Pt(3)
+                    f.space_before = Pt(2)
 
                     try:
                         # Add the picture to the document and then add a border
