@@ -1753,16 +1753,6 @@ class Reportwriter:
             context["project"]["chart_sdscore_physical"], finding=None
         )
 
-        # Pie Charts
-        context["project"]["chart_pie_external"] = "<p>{{.chart_pie_external}}</p>"
-        context["project"]["chart_pie_external_rt"] = render_subdocument(
-            context["project"]["chart_pie_external"], finding=None
-        )
-        context["project"]["chart_pie_internal"] = "<p>{{.chart_pie_internal}}</p>"
-        context["project"]["chart_pie_internal_rt"] = render_subdocument(
-            context["project"]["chart_pie_internal"], finding=None
-        )
-
         # Assignments
         for assignment in context["team"]:
             if isinstance(assignment, dict):
