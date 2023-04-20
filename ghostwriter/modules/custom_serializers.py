@@ -3,13 +3,13 @@
 # Standard Libraries
 from datetime import datetime
 
-# 3rd Party Libraries
-import pytz
-from bs4 import BeautifulSoup
-
 # Django Imports
 from django.conf import settings
 from django.utils import dateformat
+
+# 3rd Party Libraries
+import pytz
+from bs4 import BeautifulSoup
 from rest_framework import serializers
 from rest_framework.serializers import (
     RelatedField,
@@ -51,6 +51,7 @@ from ghostwriter.shepherd.models import (
     StaticServer,
     TransientServer,
 )
+from ghostwriter.stratum.enums import FindingStatusColor, Severity
 from ghostwriter.users.models import User
 
 
@@ -757,8 +758,15 @@ class ReportDataSerializer(CustomModelSerializer):
         # Get the standard JSON from ``super()``
         rep = super().to_representation(instance)
 
+        # Filter findings that are marked as complete
+        # This field is used for publishing findings to a report when they are ready
+        # This field is also used to exclude findings from a report - according to netsec experience with customers
+        findings = list(filter(lambda finding: finding["complete"], rep["findings"]))
+        # Reassigns to make sure the findings ref in templates will be the filtered completed findings
+        rep["findings"] = findings
+
         # Calculate totals for various values
-        total_findings = len(rep["findings"])
+        total_findings = len(findings)
         total_objectives = len(rep["objectives"])
         total_team = len(rep["team"])
         total_targets = len(rep["targets"])
@@ -778,18 +786,52 @@ class ReportDataSerializer(CustomModelSerializer):
         medium_findings = 0
         low_findings = 0
         info_findings = 0
-        for finding in rep["findings"]:
+
+        open_critical_findings = 0
+        open_high_findings = 0
+        open_medium_findings = 0
+        open_low_findings = 0
+        open_info_findings = 0
+
+        for finding in findings:
             finding["ordering"] = finding_order
-            if finding["severity"].lower() == "critical":
+            severity = finding["severity"].lower()
+            finding_status = strip_html(finding["network_detection_techniques"]).lower()
+            open_status = FindingStatusColor.OPEN.value[0].lower()
+            accepted_status = FindingStatusColor.ACCEPTED.value[0].lower()
+
+            def _increment_open_finding(
+                count, finding_status, open_status, accepted_status
+            ):
+                if finding_status == open_status or finding_status == accepted_status:
+                    count += 1
+                return count
+
+            if severity == Severity.CRIT.value.lower():
                 critical_findings += 1
-            elif finding["severity"].lower() == "high":
+                open_critical_findings = _increment_open_finding(
+                    open_critical_findings, finding_status, open_status, accepted_status
+                )
+            elif severity == Severity.HIGH.value.lower():
                 high_findings += 1
-            elif finding["severity"].lower() == "medium":
+                open_high_findings = _increment_open_finding(
+                    open_high_findings, finding_status, open_status, accepted_status
+                )
+            elif severity == Severity.MED.value.lower():
                 medium_findings += 1
-            elif finding["severity"].lower() == "low":
+                open_medium_findings = _increment_open_finding(
+                    open_medium_findings, finding_status, open_status, accepted_status
+                )
+            elif severity == Severity.LOW.value.lower():
                 low_findings += 1
-            elif finding["severity"].lower() == "informational":
+                open_low_findings = _increment_open_finding(
+                    open_low_findings, finding_status, open_status, accepted_status
+                )
+            elif severity == Severity.BP.value.lower():
                 info_findings += 1
+                open_info_findings = _increment_open_finding(
+                    open_info_findings, finding_status, open_status, accepted_status
+                )
             finding_order += 1
 
         # Add a ``totals`` key to track the values
@@ -802,8 +844,138 @@ class ReportDataSerializer(CustomModelSerializer):
         rep["totals"]["findings_medium"] = medium_findings
         rep["totals"]["findings_low"] = low_findings
         rep["totals"]["findings_info"] = info_findings
+        rep["totals"]["open_findings_critical"] = open_critical_findings
+        rep["totals"]["open_findings_high"] = open_high_findings
+        rep["totals"]["open_findings_medium"] = open_medium_findings
+        rep["totals"]["open_findings_low"] = open_low_findings
+        rep["totals"]["open_findings_info"] = open_info_findings
+        rep["totals"]["open_findings"] = (
+            open_critical_findings
+            + open_high_findings
+            + open_medium_findings
+            + open_low_findings
+            + open_info_findings
+        )
         rep["totals"]["scope"] = total_scope_lines
         rep["totals"]["team"] = total_team
         rep["totals"]["targets"] = total_targets
 
+        def _get_total(crit_findings, high_findings, med_findings, low_findings, info_findings):
+            return crit_findings * 25 + high_findings * 10 + med_findings * 5 + low_findings * 3 + info_findings * 1
+
+        def _get_score(total, mean, std):
+            return (mean - total) / std
+
+        def _get_findings_by_type(findings, type):
+            return list(filter(lambda finding: finding["finding_type"].lower() == type, findings))
+
+        def _get_open_findings(findings):
+            open_status = FindingStatusColor.OPEN.value[0].lower()
+            accepted_status = FindingStatusColor.ACCEPTED.value[0].lower()
+
+            def _is_open(status):
+                return status.lower() == open_status or status.lower() == accepted_status
+            return list(filter(lambda f: _is_open(strip_html(f["network_detection_techniques"])), findings,))
+
+        def _get_findings_by_severity(findings, severity):
+            return list(filter(lambda f: f["severity"].lower() == severity.lower(), findings))
+
+        # Calculate SD Score - in statistics this is called Z-Score
+        # This one is the total for all findings in the report
+        # Netsec needs separate totals for internal and external in the combo reports
+        findings_score_total = _get_total(
+            open_critical_findings,
+            open_high_findings,
+            open_medium_findings,
+            open_low_findings,
+            open_info_findings,
+        )
+
+        netsec_internal = "internal"
+        netsec_external = "external"
+
+        netsec_internal_findings = _get_findings_by_type(findings, netsec_internal)
+        netsec_external_findings = _get_findings_by_type(findings, netsec_external)
+
+        netsec_internal_open_findings = _get_open_findings(netsec_internal_findings)
+        netsec_external_open_findings = _get_open_findings(netsec_external_findings)
+
+        netsec_internal_total = _get_total(
+            len(_get_findings_by_severity(netsec_internal_open_findings, Severity.CRIT.value)),
+            len(_get_findings_by_severity(netsec_internal_open_findings, Severity.HIGH.value)),
+            len(_get_findings_by_severity(netsec_internal_open_findings, Severity.MED.value)),
+            len(_get_findings_by_severity(netsec_internal_open_findings, Severity.LOW.value)),
+            len(_get_findings_by_severity(netsec_internal_open_findings, Severity.BP.value)),
+        )
+        netsec_external_total = _get_total(
+            len(_get_findings_by_severity(netsec_external_open_findings, Severity.CRIT.value)),
+            len(_get_findings_by_severity(netsec_external_open_findings, Severity.HIGH.value)),
+            len(_get_findings_by_severity(netsec_external_open_findings, Severity.MED.value)),
+            len(_get_findings_by_severity(netsec_external_open_findings, Severity.LOW.value)),
+            len(_get_findings_by_severity(netsec_external_open_findings, Severity.BP.value)),
+        )
+
+        # Service label, total, mean, and standard deviation
+        # The hardcoded literals need to be updated once in a while to update the rolling average
+        # Mean and STDs should be based off the past three years as the security landscape changes
+        score_type_data = [
+            ("appsec", findings_score_total, 39.44715447, 33.86162857),
+            ("wireless", findings_score_total, 37.33802817, 47.06631332),
+            (netsec_internal, netsec_internal_total, 64.30909091, 56.55371468),
+            (netsec_external, netsec_external_total, 37.33802817, 47.06631332),
+            ("cloud", findings_score_total, 124.48, 63.49810706),
+            ("physical", findings_score_total, 64.30909091, 56.55371468),
+        ]
+        for d in score_type_data:
+            mean = d[2]
+            std = d[3]
+            best_score = _get_score(0, mean, std)
+            score = _get_score(d[1], mean, std)
+
+            # Convert the score to a percentage based on the range of the SD graph max value (3 STD)
+            # Negatives we are graphing as a score whereas positive as a percentage
+            # since we don't know the worst score but do know the best score
+            if score > 0:
+                score = score / best_score * 3
+            rep["totals"]["sd_score_" + d[0]] = score
+
+        # Calculate the findings chart data variable
+        def _get_chart_data(findings):
+            chart_data = []
+            severity_indexes = list(reversed([e.value.lower() for e in Severity]))
+            for finding in findings:
+                # Have to strip HTML because it's in a field that takes HTML
+                category = strip_html(finding["replication_steps"])
+                # Replace spaces with newlines to wrap x-axis labels
+                category = category.replace(" ", "\n")
+
+                severity = finding["severity"].lower()
+                category_found = False
+
+                for data in chart_data:
+                    if data[0] == category:
+                        # Update the finding count for the severity
+                        # # +1 in the index is to adjust as the label is in the first index
+                        data[severity_indexes.index(severity) + 1] += 1
+                        category_found = True
+                        break
+
+                if not category_found:
+                    # Add new entry with category label and all zeros
+                    data = [category] + [0] * 5
+                    data[severity_indexes.index(severity) + 1] += 1
+                    chart_data.append(data)
+            return chart_data
+
+        rep["totals"]["chart_data"] = _get_chart_data(findings)
+
+        # Check if there are any netsec findings, GW will hit this on report generation
+        # for appsec reports where both are empty arrays and throw an error on report generation
+        # Use all findings marked in report for these values in those cases
+        rep["totals"]["chart_data_internal"] = _get_chart_data(
+            netsec_internal_findings if netsec_internal_findings else findings
+        )
+        rep["totals"]["chart_data_external"] = _get_chart_data(
+            netsec_external_findings if netsec_external_findings else findings
+        )
         return rep

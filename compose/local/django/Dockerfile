@@ -18,6 +18,16 @@ RUN apk --no-cache add build-base curl \
     && apk --no-cache add gettext \
     # https://docs.djangoproject.com/en/dev/ref/django-admin/#dbshell
     && apk --no-cache add postgresql-client \
+    # Dependencies for scipy for custom code
+    && apk --no-cache add gfortran openblas-dev \
+    # Pull down Arial Narrow fonts from S3 bucket
+    && mkdir -p /usr/local/share/fonts \
+    && curl -O https://stratum-ghostwriter.s3.amazonaws.com/ArialNarrow.ttf --output-dir /usr/local/share/fonts \
+    && curl -O https://stratum-ghostwriter.s3.amazonaws.com/ArialNarrowBold.ttf --output-dir /usr/local/share/fonts \
+    && curl -O https://stratum-ghostwriter.s3.amazonaws.com/ArialNarrowBoldItalic.ttf --output-dir /usr/local/share/fonts \
+    && curl -O https://stratum-ghostwriter.s3.amazonaws.com/ArialNarrowItalic.ttf --output-dir /usr/local/share/fonts \
+    # Refresh the font cache with the new font installed
+    && fc-cache -f \
     # Rust and Cargo required by the ``cryptography`` Python package
     && apk --no-cache add rust \
     && apk --no-cache add cargo \
