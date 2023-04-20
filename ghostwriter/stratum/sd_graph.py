@@ -80,16 +80,16 @@ def _modify_graph_display(ax):
     ax.set_yticks([])
 
 
-def _annotate_score(sd_score, y, ax, x_shift=0, y_shift=0):
+def _annotate_score(sd_score, y, ax, bounded_score, x_shift=0, y_shift=0):
     # Format the SD score as a string
     # Calculate the coordinates to angle the arrow and orange bubble based on negative and positive values
     bubble_x_pad = 0.75 + x_shift
     bubble_y_pad = 0.12 + y_shift
-    bubble_coors = (sd_score + bubble_x_pad, y + bubble_y_pad)
+    bubble_coors = (bounded_score + bubble_x_pad, y + bubble_y_pad)
 
     arrow_x_pad = 0.55 + x_shift
     arrow_y_pad = 0.09 + y_shift
-    arrow_coors = (sd_score + arrow_x_pad + 0.25, y + arrow_y_pad)
+    arrow_coors = (bounded_score + arrow_x_pad + 0.25, y + arrow_y_pad)
 
     if sd_score > 0:
         sd_score_str = "+" + str(sd_score)
@@ -97,8 +97,8 @@ def _annotate_score(sd_score, y, ax, x_shift=0, y_shift=0):
         sd_score_str = str("+0.0")
     else:
         # Subtract the x coors for both arrow and bubble when negative
-        bubble_coors = (sd_score - bubble_x_pad, y + bubble_y_pad)
-        arrow_coors = (sd_score - arrow_x_pad - 0.25, y + arrow_y_pad)
+        bubble_coors = (bounded_score - bubble_x_pad, y + bubble_y_pad)
+        arrow_coors = (bounded_score - arrow_x_pad - 0.25, y + arrow_y_pad)
         sd_score_str = str(sd_score)
 
     t = ax.text(
@@ -115,26 +115,43 @@ def _annotate_score(sd_score, y, ax, x_shift=0, y_shift=0):
     )
     ax.annotate(
         "",
-        (sd_score, y),
+        (bounded_score, y),
         xytext=arrow_coors,
         arrowprops=dict(arrowstyle="-", color=ORANGE, lw=2),
     )
 
 
-def _plot_score(sd_score, ax, plotdata, x_shift=0, y_shift=0):
+def _plot_score(sd_score, ax, plotdata, bounded_score, x_shift=0, y_shift=0):
     sd_score = round(sd_score, 1)
-    y = norm.pdf(sd_score, plotdata[MEAN], plotdata[SD])
-    ax.scatter(sd_score, y, s=64, color="white", ec=ORANGE, zorder=10)
-    _annotate_score(sd_score, y, ax, x_shift, y_shift)
+    y = norm.pdf(bounded_score, plotdata[MEAN], plotdata[SD])
+    ax.scatter(bounded_score, y, s=64, color="white", ec=ORANGE, zorder=10)
+    _annotate_score(sd_score, y, ax, bounded_score, x_shift, y_shift)
 
 
 def build_sd_graph(sd_score):
     # Mean is 0 = Average; each x axis tick is std of 1
     plotdata = {MEAN: 0, SD: 1}
 
+    # Bound score is to handle cases where the score exceeds the bounds
+    # of the graph, this would most likely happen if the test performed
+    # had a ton of critical and high findings
+    # This keeps it on the graph and shows the actual score in the orange bubble
+    bounded_negative = -3.1
+    bounded_positive = 3.1
+    bounded_score = sd_score
+
+    if sd_score >= bounded_positive:
+        bounded_score = bounded_positive
+    elif sd_score <= bounded_negative:
+        bounded_score = bounded_negative
+    else:
+        bounded_score = round(sd_score, 1)
+
     # plot normal distribution
     x_normdist = np.linspace(
-        plotdata[MEAN] - 3 * plotdata[SD], plotdata[MEAN] + 3 * plotdata[SD], 100
+        plotdata[MEAN] + bounded_negative * plotdata[SD],
+        plotdata[MEAN] + bounded_positive * plotdata[SD],
+        100,
     )
 
     # Axis object is used a lot it handles threading better than plt. calls
@@ -144,7 +161,7 @@ def build_sd_graph(sd_score):
     # Set the x ticks to the labelling we want
     _label_x_axis(ax)
     _modify_graph_display(ax)
-    _plot_score(sd_score, ax, plotdata)
+    _plot_score(sd_score, ax, plotdata, bounded_score)
 
     # Shrink figure to be close to current size in Word template
     fig.set_figheight(1.85)

@@ -42,10 +42,6 @@ LINTER_CONTEXT = {
         "chart_bar_external_rt": "",
         "chart_bar_internal": "{{.chart_bar_internal}}",
         "chart_bar_internal_rt": "",
-        "chart_pie_external": "{{.chart_pie_external}}",
-        "chart_pie_external_rt": "",
-        "chart_pie_internal": "{{.chart_pie_internal}}",
-        "chart_pie_internal_rt": "",
         "tags": ["tag1", "tag2", "tag3"],
     },
     "client": {
