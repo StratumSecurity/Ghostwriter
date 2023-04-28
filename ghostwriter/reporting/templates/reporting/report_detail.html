@@ -187,22 +187,24 @@
                   data-placement="top"
                   title="Click-n-drag to reposition or categorize"
                 ></td>
-                <td class="align-middle icon {% if finding.finding_type.finding_type == "Network" %}
-                                                   network-icon" title="Network Finding"
+                <td class="align-middle icon {% if finding.finding_type.finding_type == "Internal" %}
+                                                   network-icon" title="Internal Finding"
+                                             {% elif finding.finding_type.finding_type == "External" %}
+                                                   globe-icon" title="External Finding"
                                              {% elif finding.finding_type.finding_type == "Wireless" %}
                                                    wireless-icon" title="Wireless Finding"
                                              {% elif finding.finding_type.finding_type == "Physical" %}
                                                    physical-icon" title="Physical Security Finding"
                                              {% elif finding.finding_type.finding_type == "Web" %}
                                                    code-icon" title="Web App Finding"
-                                             {% elif finding.finding_type.finding_type == "Mobile Application" %}
+                                             {% elif finding.finding_type.finding_type == "Mobile" %}
                                                    mobile-icon" title="Mobile Finding"
                                              {% elif finding.finding_type.finding_type == "Cloud" %}
                                                    cloud-icon" title="Cloud Finding"
                                              {% elif finding.finding_type.finding_type == "Host" %}
                                                    host-icon" title="Local Host Finding"
                                              {% else %}
-                                                   host-icon" title="other Finding"
+                                                   minus-icon" title="An unrecognised finding. Please change."
                                              {% endif %}>
                   <span style="display: none;">{{ finding.finding_type.finding_type }}</span>
                   <a id="delete-target-content-finding-{{ finding.id }}"
