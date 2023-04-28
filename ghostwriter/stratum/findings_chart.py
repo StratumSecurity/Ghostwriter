@@ -59,7 +59,7 @@ def _build_legend_style(ax):
         bbox_to_anchor=(1, 1.2),
     )
     legend.set_frame_on(False)
-    for h in legend.legendHandles:
+    for h in legend.legend_handles:
         h.set_width(8)
 
 
@@ -81,6 +81,25 @@ def _label_bars(ax):
 
 def build_bar_chart(report_data):
     category_label = "Category"
+
+    def _empty_graph():
+        # This handles rare cases if we don't find any findings during an engagement
+        categories = [
+            "Authentication",
+            "Input\nValidation",
+            "Information\nDisclosure",
+            "Session\nManagement",
+            "Authorization",
+            "Encryption",
+            "Configuration\nManagement",
+            "Patch\nManagement",
+            "Availability",
+        ]
+        return list(map(lambda c: [c] + [0] * 5, categories))
+
+    if len(report_data) == 0:
+        report_data = _empty_graph()
+
     df = pd.DataFrame(
         report_data,
         columns=[
@@ -95,7 +114,12 @@ def build_bar_chart(report_data):
 
     # Drops rows that have no findings
     df2 = df.loc[:, df.columns != category_label]
-    df = df.loc[(df2 != 0).any(axis=1)]
+
+    # Only drop no findings in a category when other categories have findings
+    # This handles reports that have no findings and will allow report generation
+    df3 = df.loc[(df2 != 0).any(axis=1)]
+    if not df3.empty:
+        df = df3
 
     # Calculate the totals for each category and weight
     df[CalcCol.TOTAL.value] = df.sum(axis=1, numeric_only=True)
@@ -152,56 +176,4 @@ def build_bar_chart(report_data):
 
     _build_legend_style(ax)
     _label_bars(ax)
-    return fig
-
-
-def build_pie_chart(report_data, total_findings):
-    df = pd.DataFrame(report_data)
-    # Make the category label the index and then the only column in the frame is the percentage
-    df = df.set_index(0)
-    df = round(df.sum(axis=1, numeric_only=True) / total_findings * 100, 0).astype(int)
-    # Sorting also helps to prevent overlapping on the labels
-    df = df.sort_index()
-    ax = df.plot(
-        kind="pie",
-        radius=1.5,
-        y=1,
-        legend=False,
-        wedgeprops={"linewidth": 1, "edgecolor": "white", "antialiased": True},
-        autopct="%1.0f%%",
-        pctdistance=0.8,
-        startangle=145,
-        labeldistance=1.3,
-        # Color scheme came from
-        # https://medium.com/@alrieristivan/guide-to-colour-wheel-7ea66881a83a
-        colors=[
-            "#662D91",
-            "#1075BD",
-            "#BE1E2E",
-            "#0D9444",
-            "#FCB040",
-            "#10A89E",
-            "#8BC53F",
-            "#D91A5C",
-            "#F6941F",
-            "#F0582B",
-            "#BE1E2E",
-            "#262262",
-        ],
-        textprops={
-            "size": FONT_SIZE,
-            "weight": "bold",
-            "family": FONT_FAMILY,
-            "horizontalalignment": "center",
-        },
-    )
-    ax.set_ylabel(None)
-
-    for text in ax.texts:
-        if "%" in text.get_text():
-            text.set_color("white")
-
-    fig = ax.get_figure()
-    fig.set_figheight(2.8)
-    fig.set_dpi(200)
     return fig

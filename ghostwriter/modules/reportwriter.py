@@ -56,7 +56,7 @@ from ghostwriter.stratum.enums import (
     Severity,
     get_value_from_key,
 )
-from ghostwriter.stratum.findings_chart import build_bar_chart, build_pie_chart
+from ghostwriter.stratum.findings_chart import build_bar_chart
 from ghostwriter.stratum.sd_graph import build_sd_graph, plt
 
 # Using __name__ resolves to ghostwriter.modules.reporting
@@ -715,9 +715,9 @@ class Reportwriter:
                     par.alignment = WD_ALIGN_PARAGRAPH.CENTER
                     run = par.add_run()
 
-                    # Add a +1 space point before the image to not overlap onto the table header
+                    # Add space point before the image to not overlap onto the table header
                     f = par.paragraph_format
-                    f.space_before = Pt(1)
+                    f.space_before = Pt(2)
 
                     try:
                         # Add the picture to the document and then add a border
@@ -1039,24 +1039,6 @@ class Reportwriter:
 
                     if keyword == "chart_sdscore_wireless":
                         _build_sd_graph(self, par, keyword, "sd_score_wireless")
-                        return par
-
-                    # Pie charts
-                    def _build_pie(self, par, keyword, label):
-                        chart_data = self.report_json["totals"][label]
-                        total_findings = 0
-                        for r in chart_data:
-                            total_findings += sum(r[1:])
-
-                        fig = build_pie_chart(chart_data, total_findings)
-                        self._add_image(par, fig, keyword, image_height=fig.get_figheight())
-
-                    if keyword == "chart_pie_internal":
-                        _build_pie(self, par, keyword, "chart_data_internal")
-                        return par
-
-                    if keyword == "chart_pie_external":
-                        _build_pie(self, par, keyword, "chart_data_external")
                         return par
 
                     # Handle evidence files
@@ -1769,16 +1751,6 @@ class Reportwriter:
         context["project"]["chart_sdscore_physical"] = "<p>{{.chart_sdscore_physical}}</p>"
         context["project"]["chart_sdscore_physical_rt"] = render_subdocument(
             context["project"]["chart_sdscore_physical"], finding=None
-        )
-
-        # Pie Charts
-        context["project"]["chart_pie_external"] = "<p>{{.chart_pie_external}}</p>"
-        context["project"]["chart_pie_external_rt"] = render_subdocument(
-            context["project"]["chart_pie_external"], finding=None
-        )
-        context["project"]["chart_pie_internal"] = "<p>{{.chart_pie_internal}}</p>"
-        context["project"]["chart_pie_internal_rt"] = render_subdocument(
-            context["project"]["chart_pie_internal"], finding=None
         )
 
         # Assignments
