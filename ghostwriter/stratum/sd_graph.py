@@ -164,7 +164,7 @@ def build_sd_graph(sd_score):
     _plot_score(sd_score, ax, plotdata, bounded_score)
 
     # Shrink figure to be close to current size in Word template
-    fig.set_figheight(1.85)
+    fig.set_figheight(1.95)
     # Think of DPI as zooming in on the image making it easier to see
-    fig.set_dpi(150)
+    fig.set_dpi(175)
     return fig
