@@ -881,7 +881,7 @@ class ReportDataSerializer(CustomModelSerializer):
             # Convert the score to a percentage based on the range of the SD graph max value (3 STD)
             # Negatives we are graphing as a score whereas positive as a percentage
             # since we don't know the worst score but do know the best score
-            lower_bound = -3
+            lower_bound = -3.0
             if score > 0:
                 score = score / best_score * abs(lower_bound)
             elif score < lower_bound:
