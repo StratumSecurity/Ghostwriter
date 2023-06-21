@@ -51,7 +51,7 @@ from ghostwriter.shepherd.models import (
     StaticServer,
     TransientServer,
 )
-from ghostwriter.stratum.enums import FindingStatusColor, Severity
+from ghostwriter.stratum.enums import Severity
 from ghostwriter.users.models import User
 
 
@@ -787,51 +787,20 @@ class ReportDataSerializer(CustomModelSerializer):
         low_findings = 0
         info_findings = 0
 
-        open_critical_findings = 0
-        open_high_findings = 0
-        open_medium_findings = 0
-        open_low_findings = 0
-        open_info_findings = 0
-
         for finding in findings:
             finding["ordering"] = finding_order
             severity = finding["severity"].lower()
-            finding_status = strip_html(finding["network_detection_techniques"]).lower()
-            open_status = FindingStatusColor.OPEN.value[0].lower()
-            accepted_status = FindingStatusColor.ACCEPTED.value[0].lower()
-
-            def _increment_open_finding(
-                count, finding_status, open_status, accepted_status
-            ):
-                if finding_status == open_status or finding_status == accepted_status:
-                    count += 1
-                return count
 
             if severity == Severity.CRIT.value.lower():
                 critical_findings += 1
-                open_critical_findings = _increment_open_finding(
-                    open_critical_findings, finding_status, open_status, accepted_status
-                )
             elif severity == Severity.HIGH.value.lower():
                 high_findings += 1
-                open_high_findings = _increment_open_finding(
-                    open_high_findings, finding_status, open_status, accepted_status
-                )
             elif severity == Severity.MED.value.lower():
                 medium_findings += 1
-                open_medium_findings = _increment_open_finding(
-                    open_medium_findings, finding_status, open_status, accepted_status
-                )
             elif severity == Severity.LOW.value.lower():
                 low_findings += 1
-                open_low_findings = _increment_open_finding(
-                    open_low_findings, finding_status, open_status, accepted_status
-                )
             elif severity == Severity.BP.value.lower():
                 info_findings += 1
-                open_info_findings = _increment_open_finding(
-                    open_info_findings, finding_status, open_status, accepted_status
-                )
             finding_order += 1
 
         # Add a ``totals`` key to track the values
@@ -844,18 +813,6 @@ class ReportDataSerializer(CustomModelSerializer):
         rep["totals"]["findings_medium"] = medium_findings
         rep["totals"]["findings_low"] = low_findings
         rep["totals"]["findings_info"] = info_findings
-        rep["totals"]["open_findings_critical"] = open_critical_findings
-        rep["totals"]["open_findings_high"] = open_high_findings
-        rep["totals"]["open_findings_medium"] = open_medium_findings
-        rep["totals"]["open_findings_low"] = open_low_findings
-        rep["totals"]["open_findings_info"] = open_info_findings
-        rep["totals"]["open_findings"] = (
-            open_critical_findings
-            + open_high_findings
-            + open_medium_findings
-            + open_low_findings
-            + open_info_findings
-        )
         rep["totals"]["scope"] = total_scope_lines
         rep["totals"]["team"] = total_team
         rep["totals"]["targets"] = total_targets
@@ -869,14 +826,6 @@ class ReportDataSerializer(CustomModelSerializer):
         def _get_findings_by_type(findings, type):
             return list(filter(lambda finding: finding["finding_type"].lower() == type, findings))
 
-        def _get_open_findings(findings):
-            open_status = FindingStatusColor.OPEN.value[0].lower()
-            accepted_status = FindingStatusColor.ACCEPTED.value[0].lower()
-
-            def _is_open(status):
-                return status.lower() == open_status or status.lower() == accepted_status
-            return list(filter(lambda f: _is_open(strip_html(f["network_detection_techniques"])), findings,))
-
         def _get_findings_by_severity(findings, severity):
             return list(filter(lambda f: f["severity"].lower() == severity.lower(), findings))
 
@@ -884,11 +833,11 @@ class ReportDataSerializer(CustomModelSerializer):
         # This one is the total for all findings in the report
         # Netsec needs separate totals for internal and external in the combo reports
         findings_score_total = _get_total(
-            open_critical_findings,
-            open_high_findings,
-            open_medium_findings,
-            open_low_findings,
-            open_info_findings,
+            critical_findings,
+            high_findings,
+            medium_findings,
+            low_findings,
+            info_findings,
         )
 
         netsec_internal = "internal"
@@ -897,22 +846,19 @@ class ReportDataSerializer(CustomModelSerializer):
         netsec_internal_findings = _get_findings_by_type(findings, netsec_internal)
         netsec_external_findings = _get_findings_by_type(findings, netsec_external)
 
-        netsec_internal_open_findings = _get_open_findings(netsec_internal_findings)
-        netsec_external_open_findings = _get_open_findings(netsec_external_findings)
-
         netsec_internal_total = _get_total(
-            len(_get_findings_by_severity(netsec_internal_open_findings, Severity.CRIT.value)),
-            len(_get_findings_by_severity(netsec_internal_open_findings, Severity.HIGH.value)),
-            len(_get_findings_by_severity(netsec_internal_open_findings, Severity.MED.value)),
-            len(_get_findings_by_severity(netsec_internal_open_findings, Severity.LOW.value)),
-            len(_get_findings_by_severity(netsec_internal_open_findings, Severity.BP.value)),
+            len(_get_findings_by_severity(netsec_internal_findings, Severity.CRIT.value)),
+            len(_get_findings_by_severity(netsec_internal_findings, Severity.HIGH.value)),
+            len(_get_findings_by_severity(netsec_internal_findings, Severity.MED.value)),
+            len(_get_findings_by_severity(netsec_internal_findings, Severity.LOW.value)),
+            len(_get_findings_by_severity(netsec_internal_findings, Severity.BP.value)),
         )
         netsec_external_total = _get_total(
-            len(_get_findings_by_severity(netsec_external_open_findings, Severity.CRIT.value)),
-            len(_get_findings_by_severity(netsec_external_open_findings, Severity.HIGH.value)),
-            len(_get_findings_by_severity(netsec_external_open_findings, Severity.MED.value)),
-            len(_get_findings_by_severity(netsec_external_open_findings, Severity.LOW.value)),
-            len(_get_findings_by_severity(netsec_external_open_findings, Severity.BP.value)),
+            len(_get_findings_by_severity(netsec_external_findings, Severity.CRIT.value)),
+            len(_get_findings_by_severity(netsec_external_findings, Severity.HIGH.value)),
+            len(_get_findings_by_severity(netsec_external_findings, Severity.MED.value)),
+            len(_get_findings_by_severity(netsec_external_findings, Severity.LOW.value)),
+            len(_get_findings_by_severity(netsec_external_findings, Severity.BP.value)),
         )
 
         # Service label, total, mean, and standard deviation
@@ -935,8 +881,11 @@ class ReportDataSerializer(CustomModelSerializer):
             # Convert the score to a percentage based on the range of the SD graph max value (3 STD)
             # Negatives we are graphing as a score whereas positive as a percentage
             # since we don't know the worst score but do know the best score
+            lower_bound = -3.0
             if score > 0:
-                score = score / best_score * 3
+                score = score / best_score * abs(lower_bound)
+            elif score < lower_bound:
+                score = lower_bound
             rep["totals"]["sd_score_" + d[0]] = score
 
         # Calculate the findings chart data variable

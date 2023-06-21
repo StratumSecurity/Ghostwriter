@@ -136,16 +136,15 @@ def build_sd_graph(sd_score):
     # of the graph, this would most likely happen if the test performed
     # had a ton of critical and high findings
     # This keeps it on the graph and shows the actual score in the orange bubble
-    bounded_negative = -3.1
-    bounded_positive = 3.1
+    bounded_negative = -3.0
+    bounded_positive = 3.0
     bounded_score = sd_score
 
     if sd_score >= bounded_positive:
         bounded_score = bounded_positive
     elif sd_score <= bounded_negative:
         bounded_score = bounded_negative
-    else:
-        bounded_score = round(sd_score, 1)
+    bounded_score = round(bounded_score, 1)
 
     # plot normal distribution
     x_normdist = np.linspace(
