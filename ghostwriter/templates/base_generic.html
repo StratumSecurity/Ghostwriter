@@ -20,13 +20,18 @@
 
   <!-- jQuery JS -->
   <script src="{% static 'js/jquery-3.6.1.min.js' %}"></script>
+  <script src="{% static 'js/jquery-ui.js' %}"></script>
   <script src="{% static 'js/popper.min.js' %}"></script>
   <script src="{% static 'js/bootstrap.min.js' %}"></script>
+
+  <!-- Sugar Parser -->
+  <script src="{% static 'js/sugar.min.js' %}"></script>
 
   <!-- jQuery Tablesorter Plugin -->
   <script type="text/javascript" src="{% static 'js/jquery.tablesorter.js' %}"></script>
   <script type="text/javascript" src="{% static 'js/jquery.tablesorter.widgets.js' %}"></script>
   <script type="text/javascript" src="{% static 'js/parser-date-range.min.js' %}"></script>
+  <script type="text/javascript" src="{% static 'js/parser-date.js' %}"></script>
 
   <!-- SortableJS for Drag n Drop -->
   <script src="{% static 'js/Sortable.min.js' %}"></script>
@@ -81,8 +86,6 @@
   <link rel="stylesheet" href="{% static 'css/cvss_styles.css' %}">
   <script src="{% static 'js/cvsscalc30.js' %}"></script>
   <script src="{% static 'js/cvsscalc30_ui.js' %}"></script>
-
-
 </head>
 
 <body>
@@ -185,12 +188,14 @@
             <ul class="collapse list-unstyled text-left" id="clientSubmenu">
               {% comment %} Search for Clients {% endcomment %}
               <form class="px-6 py-2" action="{% url 'rolodex:clients' %}" method="GET">
-                <input type="search" autocomplete="off" class="form-control" id="client-search" name="client_search"
+                <input type="search" autocomplete="off" class="form-control" id="client-search" name="name"
                        placeholder="Search Clients..." autofocus="autofocus">
               </form>
               {% comment %} Clients Submenu Items {% endcomment %}
               <li><a class="icon list-icon" href="{% url 'rolodex:clients' %}">Client Library</a></li>
-              <li><a class="icon plus-icon" href="{% url 'rolodex:client_create' %}">Add New Client</a></li>
+              {% if request.user|is_privileged %}
+                <li><a class="icon plus-icon" href="{% url 'rolodex:client_create' %}">Add New Client</a></li>
+              {% endif %}
             </ul>
           </li>
           <li>
@@ -199,12 +204,14 @@
             <ul class="collapse list-unstyled text-left" id="findingsSubmenu">
               {% comment %} Search for Findings {% endcomment %}
               <form class="px-6 py-2" action="{% url 'reporting:findings' %}" method="GET">
-                <input type="search" autocomplete="off" class="form-control" id="finding-search" name="finding_search"
+                <input type="search" autocomplete="off" class="form-control" id="finding-search" name="title"
                        placeholder="Search Findings..." autofocus="autofocus">
               </form>
               {% comment %} Findings Submenu Items {% endcomment %}
               <li><a class="icon list-icon" href="{% url 'reporting:findings' %}">Finding Library</a></li>
-              <li><a class="icon plus-icon" href="{% url 'reporting:finding_create' %}">Add New Finding</a></li>
+              {% if request.user|can_create_finding %}
+                <li><a class="icon plus-icon" href="{% url 'reporting:finding_create' %}">Add New Finding</a></li>
+              {% endif %}
             </ul>
           </li>
         </ul>
@@ -222,7 +229,9 @@
                class="dropdown-toggle sidebar-dropdown-toggle">Projects</a>
             <ul class="collapse list-unstyled text-left" id="projectSubmenu">
               <li><a class="icon list-icon" href="{% url 'rolodex:projects' %}">Projects Library</a></li>
-              <li><a class="icon plus-icon" href="{% url 'rolodex:project_create_no_client' %}">Add New Project</a></li>
+              {% if request.user|is_privileged %}
+                <li><a class="icon plus-icon" href="{% url 'rolodex:project_create_no_client' %}">Add New Project</a></li>
+              {% endif %}
             </ul>
           </li>
           <li>
@@ -288,7 +297,7 @@
             <ul class="collapse list-unstyled text-left" id="shepSubmenu">
               {% comment %} Search for Domains {% endcomment %}
               <form class="px-6 py-2" action="{% url 'shepherd:domains' %}" method="GET">
-                <input type="search" autocomplete="off" class="form-control" id="domain-search" name="domain_search"
+                <input type="search" autocomplete="off" class="form-control" id="domain-search" name="domain"
                        placeholder="Search Domains..." autofocus="autofocus">
               </form>
               {% comment %} Domains Submenu Items {% endcomment %}
@@ -383,6 +392,7 @@
         <!-- User Profile & Avatar -->
         <a href="{% url 'users:user_detail' request.user.username %}">
           <img class="navbar-avatar"
+               data-toggle="tooltip" data-placement="top" title="Logged-in as {{ request.user.username }}"
                src="{{ request.user.userprofile.avatar_url }}"
                alt="Avatar">
         </a>
@@ -400,6 +410,20 @@
 
 {% comment %} Scripts included on ALL pages {% endcomment %}
 <script>
+  {% comment %} Handle AJAX errors {% endcomment %}
+  (function($){
+    $(document).on('ajaxError', function(event, xhr) {
+      if (xhr.status === 401 || xhr.status === 403) {
+        if (xhr.hasOwnProperty('responseJSON')) {
+          let errorData = xhr.responseJSON;
+          if (errorData['message']) {
+            displayToastTop({type:errorData['result'], string:errorData['message'], title:'Error'});
+          }
+        }
+      }
+    });
+  })(jQuery);
+
   {% comment %} Scroll button handling {% endcomment %}
   let scrollButton = $('#scroll-button');
 
@@ -622,6 +646,8 @@
         $('html,body').stop().animate({
           scrollTop: $($(this).attr('href')).offset().top - $('.nav').height()
         }, 700, 'swing');
+        e.preventDefault();
+        e.stopImmediatePropagation();
         $(this).tab('show');
         window.location.hash = $(this).attr('href');
       });
@@ -707,8 +733,8 @@
       });
     });
 
-    {% comment %} Toggle the hamburger menu back to normal if user clicks away {% endcomment %}
     $(window).click(function () {
+      {% comment %} Toggle the hamburger menu back to normal if user clicks away {% endcomment %}
       let $hamburgerMenu = $('.dropdown-menu-btn')
       if ($hamburgerMenu.hasClass('change')) {
         $hamburgerMenu.removeClass('change');

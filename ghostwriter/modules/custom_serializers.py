@@ -21,7 +21,7 @@ from timezone_field.rest_framework import TimeZoneSerializerField
 
 # Ghostwriter Libraries
 from ghostwriter.commandcenter.models import CompanyInformation
-from ghostwriter.oplog.models import OplogEntry
+from ghostwriter.oplog.models import Oplog, OplogEntry
 from ghostwriter.reporting.models import (
     Evidence,
     Finding,
@@ -35,6 +35,7 @@ from ghostwriter.rolodex.models import (
     Deconfliction,
     Project,
     ProjectAssignment,
+    ProjectContact,
     ProjectNote,
     ProjectObjective,
     ProjectScope,
@@ -124,12 +125,14 @@ class CompanyInfoSerializer(CustomModelSerializer):
     """Serialize :model:`commandcenter:CompanyInformation` entries."""
 
     name = serializers.CharField(source="company_name")
+    short_name = serializers.CharField(source="company_short_name")
+    address = serializers.CharField(source="company_address")
     twitter = serializers.CharField(source="company_twitter")
     email = serializers.CharField(source="company_email")
 
     class Meta:
         model = CompanyInformation
-        exclude = ["id", "company_name", "company_twitter", "company_email"]
+        exclude = ["id", "company_name", "company_short_name", "company_address", "company_twitter", "company_email"]
 
 
 class EvidenceSerializer(TaggitSerializer, CustomModelSerializer):
@@ -570,6 +573,16 @@ class TransientServerSerializer(CustomModelSerializer):
         ]
 
 
+class ProjectContactSerializer(CustomModelSerializer):
+    """Serialize :model:`rolodex:ProjectContact` entries."""
+
+    timezone = TimeZoneSerializerField()
+
+    class Meta:
+        model = ProjectContact
+        fields = "__all__"
+
+
 class ProjectSerializer(TaggitSerializer, CustomModelSerializer):
     """Serialize :model:`rolodex:Project` entries."""
 
@@ -681,6 +694,19 @@ class OplogEntrySerializer(TaggitSerializer, CustomModelSerializer):
         fields = "__all__"
 
 
+class OplogSerializer(TaggitSerializer, CustomModelSerializer):
+    """Serialize :model:`oplog.Oplog` entries."""
+
+    entries = OplogEntrySerializer(
+        many=True,
+        exclude=["id", "oplog_id"],
+    )
+
+    class Meta:
+        model = Oplog
+        fields = "__all__"
+
+
 class ReportDataSerializer(CustomModelSerializer):
     """Serialize :model:`rolodex:Project` and all related entries."""
 
@@ -693,6 +719,8 @@ class ReportDataSerializer(CustomModelSerializer):
         ]
     )
     client = ClientSerializer(source="project.client")
+    recipient = SerializerMethodField("get_recipient")
+    contacts = ProjectContactSerializer(source="project.projectcontact_set", many=True, exclude=["id", "project"])
     team = ProjectAssignmentSerializer(source="project.projectassignment_set", many=True, exclude=["id", "project"])
     objectives = ProjectObjectiveSerializer(source="project.projectobjective_set", many=True, exclude=["id", "project"])
     targets = ProjectTargetSerializer(source="project.projecttarget_set", many=True, exclude=["id", "project"])
@@ -731,6 +759,7 @@ class ReportDataSerializer(CustomModelSerializer):
             "client",
         ]
     )
+    logs = OplogSerializer(source="project.oplog_set", many=True, exclude=["id", "mute_notifications", "project"])
     company = SerializerMethodField("get_company_info")
     tools = SerializerMethodField("get_tools")
 
@@ -753,6 +782,14 @@ class ReportDataSerializer(CustomModelSerializer):
                 if entry.tool and entry.tool.lower() not in tools:
                     tools.append(entry.tool.lower())
         return tools
+
+    def get_recipient(self, obj):
+        primary = None
+        for contact in obj.project.projectcontact_set.all():
+            if contact.primary:
+                primary = contact
+                break
+        return ProjectContactSerializer(primary, exclude=["id", "project"]).data
 
     def to_representation(self, instance):
         # Get the standard JSON from ``super()``

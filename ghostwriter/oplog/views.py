@@ -1,32 +1,33 @@
-"""This contains all of the views used by the Oplog application."""
+"""This contains all the views used by the Oplog application."""
 
 # Standard Libraries
+import csv
 import logging
 
 # Django Imports
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.views.generic import ListView
 from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import CreateView, DeleteView, UpdateView, View
 
 # 3rd Party Libraries
-from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework_api_key.models import APIKey
-from rest_framework_api_key.permissions import HasAPIKey
 from tablib import Dataset
 
 # Ghostwriter Libraries
+from ghostwriter.api.utils import (
+    RoleBasedAccessControlMixin,
+    get_logs_list,
+    verify_access,
+    verify_user_is_privileged,
+)
+from ghostwriter.oplog.admin import OplogEntryResource
+from ghostwriter.oplog.forms import OplogEntryForm, OplogForm
+from ghostwriter.oplog.models import Oplog, OplogEntry
 from ghostwriter.rolodex.models import Project
-from .admin import OplogEntryResource
-from .forms import OplogEntryForm, OplogForm
-from .models import Oplog, OplogEntry
-from .serializers import OplogEntrySerializer, OplogSerializer
 
 # Using __name__ resolves to ghostwriter.oplog.views
 logger = logging.getLogger(__name__)
@@ -37,57 +38,48 @@ logger = logging.getLogger(__name__)
 ##################
 
 
-class OplogMuteToggle(LoginRequiredMixin, SingleObjectMixin, UserPassesTestMixin, View):
-    """
-    Toggle the ``mute_notifications`` field of an individual :model:`oplog.Oplog`.
-    """
+class OplogMuteToggle(RoleBasedAccessControlMixin, SingleObjectMixin, View):
+    """Toggle the ``mute_notifications`` field of an individual :model:`oplog.Oplog`."""
 
     model = Oplog
 
     def test_func(self):
-        if self.request.user.role in (
-            "manager",
-            "admin",
-        ):
-            return True
-        return self.request.user.is_staff
+        # Only allow managers and admins to mute notifications
+        return verify_user_is_privileged(self.request.user)
 
     def handle_no_permission(self):
-        if self.request.user.is_authenticated:
-            data = {"result": "error", "message": "Only a manager or admin can mute notifications"}
-        else:
-            data = {"result": "error", "message": "You must be logged in"}
+        data = {"result": "error", "message": "Only a manager or admin can mute notifications."}
         return JsonResponse(data, status=403)
 
     def post(self, *args, **kwargs):
-        self.object = self.get_object()
+        obj = self.get_object()
         try:
-            if self.object.mute_notifications:
-                self.object.mute_notifications = False
+            if obj.mute_notifications:
+                obj.mute_notifications = False
                 data = {
                     "result": "success",
-                    "message": "Oplog monitor notifications have been unmuted",
+                    "message": "Log monitor notifications have been unmuted.",
                     "toggle": 0,
                 }
             else:
-                self.object.mute_notifications = True
+                obj.mute_notifications = True
                 data = {
                     "result": "success",
-                    "message": "Oplog monitor notifications have been muted",
+                    "message": "Log monitor notifications have been muted.",
                     "toggle": 1,
                 }
-            self.object.save()
+            obj.save()
             logger.info(
                 "Toggled notifications for %s %s by request of %s",
-                self.object.__class__.__name__,
-                self.object.id,
+                obj.__class__.__name__,
+                obj.id,
                 self.request.user,
             )
         except Exception as exception:  # pragma: no cover
             template = "An exception of type {0} occurred. Arguments:\n{1!r}"
             log_message = template.format(type(exception).__name__, exception.args)
             logger.error(log_message)
-            data = {"result": "error", "message": "Could not update mute status for oplog monitor notifications"}
+            data = {"result": "error", "message": "Could not update mute status for log monitor notifications."}
 
         return JsonResponse(data)
 
@@ -95,20 +87,6 @@ class OplogMuteToggle(LoginRequiredMixin, SingleObjectMixin, UserPassesTestMixin
 ##################
 # View Functions #
 ##################
-
-
-@login_required
-def index(request):
-    """
-    Display a list of all :model:`oplog.Oplog`.
-
-    **Template**
-
-    :template:`oplog/oplog_list.html`
-    """
-    op_logs = Oplog.objects.all()
-    context = {"op_logs": op_logs}
-    return render(request, "oplog/oplog_list.html", context=context)
 
 
 @login_required
@@ -121,15 +99,50 @@ def oplog_entries_import(request):
 
     :template:`oplog/oplog_import.html`
     """
+    logs = get_logs_list(request.user)
     if request.method == "POST":
+        bad_selection = False
+        oplog_id = request.POST.get("oplog_id")
         oplog_entry_resource = OplogEntryResource()
+
+        if isinstance(oplog_id, str):
+            if oplog_id.isdigit():
+                oplog_id = int(oplog_id)
+        if oplog_id and isinstance(oplog_id, int):
+            try:
+                oplog = Oplog.objects.get(id=oplog_id)
+                if not verify_access(request.user, oplog.project):
+                    bad_selection = True
+            except Oplog.DoesNotExist:
+                bad_selection = True
+        else:
+            bad_selection = True
+
+        if bad_selection:
+            messages.error(
+                request,
+                "You selected an invalid log.",
+                extra_tags="alert-error",
+            )
+            return HttpResponseRedirect(reverse("oplog:oplog_import"))
 
         new_entries = request.FILES["csv_file"].read().decode("iso-8859-1")
         dataset = Dataset()
 
         imported_data = dataset.load(new_entries, format="csv")
-        result = oplog_entry_resource.import_data(imported_data, dry_run=True)
+        if not imported_data.headers:
+            messages.error(
+                request,
+                "Your log file is missing the header row.",
+                extra_tags="alert-error",
+            )
+            return HttpResponseRedirect(reverse("oplog:oplog_import"))
 
+        if "oplog_id" in imported_data.headers:
+            del imported_data["oplog_id"]
+        imported_data.append_col([oplog_id] * len(imported_data), header="oplog_id")
+
+        result = oplog_entry_resource.import_data(imported_data, dry_run=True)
         if result.has_errors():
             row_errors = result.row_errors()
             for exc in row_errors:
@@ -139,9 +152,8 @@ def oplog_entries_import(request):
                     extra_tags="alert-danger",
                 )
             return HttpResponseRedirect(reverse("oplog:oplog_import"))
+
         oplog_entry_resource.import_data(imported_data, format="csv", dry_run=False)
-        # Get the first ``oplog_id`` value to use for a redirect
-        oplog_id = imported_data["oplog_id"][0]
         messages.success(
             request,
             "Successfully imported log data",
@@ -149,7 +161,7 @@ def oplog_entries_import(request):
         )
         return HttpResponseRedirect(reverse("oplog:oplog_entries", kwargs={"pk": oplog_id}))
 
-    return render(request, "oplog/oplog_import.html")
+    return render(request, "oplog/oplog_import.html", context={"logs": logs})
 
 
 ################
@@ -157,7 +169,26 @@ def oplog_entries_import(request):
 ################
 
 
-class OplogListEntries(LoginRequiredMixin, DetailView):
+class OplogListView(RoleBasedAccessControlMixin, ListView):
+    """
+    Display a list of :model:`oplog.Oplog`. Only show logs associated with :model:`rolodex.Project`
+    to which the user has access.
+
+    **Template**
+
+    :template:`oplog/oplog_list.html`
+    """
+
+    model = Oplog
+    template_name = "oplog/oplog_list.html"
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = get_logs_list(user)
+        return queryset
+
+
+class OplogListEntries(RoleBasedAccessControlMixin, DetailView):
     """
     Display an individual :model:`oplog.Oplog`.
 
@@ -173,8 +204,15 @@ class OplogListEntries(LoginRequiredMixin, DetailView):
 
     model = Oplog
 
+    def test_func(self):
+        return verify_access(self.request.user, self.get_object().project)
 
-class OplogCreate(LoginRequiredMixin, CreateView):
+    def handle_no_permission(self):
+        messages.error(self.request, "You do not have permission to access that.")
+        return redirect("oplog:index")
+
+
+class OplogCreate(RoleBasedAccessControlMixin, CreateView):
     """
     Create an individual instance of :model:`oplog.Oplog`.
 
@@ -203,16 +241,18 @@ class OplogCreate(LoginRequiredMixin, CreateView):
             # Try to get the project from :model:`rolodex.Project`
             if pk:
                 try:
-                    self.project = get_object_or_404(Project, pk=self.kwargs.get("pk"))
+                    project = get_object_or_404(Project, pk=self.kwargs.get("pk"))
+                    if verify_access(self.request.user, project):
+                        self.project = project
                 except Project.DoesNotExist:
                     logger.info(
-                        "Received report create request for Project ID %s, but that Project does not exist",
+                        "Received log create request for project ID %s, but that project does not exist",
                         pk,
                     )
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs.update({"project": self.project})
+        kwargs.update({"project": self.project, "user": self.request.user})
         return kwargs
 
     def get_context_data(self, **kwargs):
@@ -229,35 +269,10 @@ class OplogCreate(LoginRequiredMixin, CreateView):
         if not form.fields["project"].queryset:
             messages.error(
                 self.request,
-                "There are no active projects for a new operation log",
+                "There are no active projects for a new activity log.",
                 extra_tags="alert-error",
             )
         return form
-
-    # TODO: The use of DRF and DRF API keys will be DEPRECATED in the near future and this section will need to be removed
-    def form_valid(self, form):
-        # Save the new :model:`oplog.Oplog` instance
-        form.save()
-        # Create new API key for this oplog
-        try:
-            project = form.instance.project.id
-            oplog_name = form.instance.name
-            api_key_name = oplog_name
-            api_key, key = APIKey.objects.create_key(name=api_key_name[:50])
-            # Pass the API key via the messages framework
-            messages.info(
-                self.request,
-                f'The logging API key for project {project} and log "{api_key}" is: {key}\r\nPlease store it somewhere safe: you will not be able to see it again.',
-                extra_tags="api-key no-toast",
-            )
-        except Exception:
-            logger.exception("Failed to create new API key")
-            messages.error(
-                self.request,
-                "Could not generate an API key for your new operation log – contact your admin!",
-                extra_tags="alert-danger",
-            )
-        return super().form_valid(form)
 
     def get_initial(self):
         if self.project:
@@ -274,7 +289,7 @@ class OplogCreate(LoginRequiredMixin, CreateView):
         return reverse("oplog:index")
 
 
-class OplogUpdate(LoginRequiredMixin, UpdateView):
+class OplogUpdate(RoleBasedAccessControlMixin, UpdateView):
     """
     Update an individual :model:`oplog.Oplog`.
 
@@ -286,6 +301,13 @@ class OplogUpdate(LoginRequiredMixin, UpdateView):
     model = Oplog
     form_class = OplogForm
 
+    def test_func(self):
+        return verify_access(self.request.user, self.get_object().project)
+
+    def handle_no_permission(self):
+        messages.error(self.request, "You do not have permission to access that.")
+        return redirect("oplog:index")
+
     def get_success_url(self):
         return reverse("oplog:oplog_entries", args=(self.object.id,))
 
@@ -293,6 +315,11 @@ class OplogUpdate(LoginRequiredMixin, UpdateView):
         ctx = super().get_context_data(**kwargs)
         ctx["cancel_link"] = reverse("oplog:oplog_entries", kwargs={"pk": self.object.pk})
         return ctx
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs.update({"user": self.request.user})
+        return kwargs
 
 
 class AjaxTemplateMixin:
@@ -310,7 +337,7 @@ class AjaxTemplateMixin:
         return super().dispatch(request, *args, **kwargs)
 
 
-class OplogEntryCreate(LoginRequiredMixin, AjaxTemplateMixin, CreateView):
+class OplogEntryCreate(RoleBasedAccessControlMixin, AjaxTemplateMixin, CreateView):
     """
     Create an individual :model:`oplog.OplogEntry`.
 
@@ -324,11 +351,18 @@ class OplogEntryCreate(LoginRequiredMixin, AjaxTemplateMixin, CreateView):
     template_name = "oplog/oplogentry_form.html"
     ajax_template_name = "oplog/snippets/oplogentry_form_inner.html"
 
+    def test_func(self):
+        return verify_access(self.request.user, self.get_object().oplog_id.project)
+
+    def handle_no_permission(self):
+        messages.error(self.request, "You do not have permission to access that.")
+        return redirect("oplog:index")
+
     def get_success_url(self):
         return reverse("oplog:oplog_entries", args=(self.object.oplog_id.id,))
 
 
-class OplogEntryUpdate(LoginRequiredMixin, AjaxTemplateMixin, UpdateView):
+class OplogEntryUpdate(RoleBasedAccessControlMixin, AjaxTemplateMixin, UpdateView):
     """
     Update an individual :model:`oplog.OplogEntry`.
 
@@ -342,11 +376,18 @@ class OplogEntryUpdate(LoginRequiredMixin, AjaxTemplateMixin, UpdateView):
     template_name = "oplog/oplogentry_form.html"
     ajax_template_name = "oplog/snippets/oplogentry_form_inner.html"
 
+    def test_func(self):
+        return verify_access(self.request.user, self.get_object().oplog_id.project)
+
+    def handle_no_permission(self):
+        messages.error(self.request, "You do not have permission to access that.")
+        return redirect("oplog:index")
+
     def get_success_url(self):
         return reverse("oplog:oplog_entries", args=(self.object.oplog_id.id,))
 
 
-class OplogEntryDelete(LoginRequiredMixin, DeleteView):
+class OplogEntryDelete(RoleBasedAccessControlMixin, DeleteView):
     """
     Delete an individual :model:`oplog.OplogEntry`.
     """
@@ -354,36 +395,60 @@ class OplogEntryDelete(LoginRequiredMixin, DeleteView):
     model = OplogEntry
     fields = "__all__"
 
+    def test_func(self):
+        return verify_access(self.request.user, self.get_object().oplog_id.project)
+
+    def handle_no_permission(self):
+        messages.error(self.request, "You do not have permission to access that.")
+        return redirect("oplog:index")
+
     def get_success_url(self):
         return reverse("oplog:oplog_entries", args=(self.object.oplog_id.id,))
 
 
-# TODO: The use of DRF and DRF API keys will be DEPRECATED in the near future and this section will need to be removed
-class OplogEntryViewSet(viewsets.ModelViewSet):
-    serializer_class = OplogEntrySerializer
-    queryset = OplogEntry.objects.all()
-    permission_classes = [HasAPIKey | IsAuthenticated]
+class OplogExport(RoleBasedAccessControlMixin, SingleObjectMixin, View):
+    """Export the :oplog:`oplog.Entries` for an individual :model:`oplog.Oplog` in a csv format."""
 
-    def list(self, request):
-        if "oplog_id" not in self.request.query_params:
-            queryset = OplogEntry.objects.all().order_by("-start_date")
-        else:
-            oplog_id = self.request.query_params["oplog_id"]
-            queryset = OplogEntry.objects.filter(oplog_id=oplog_id).order_by("-start_date")
-        if "export" in request.query_params:
-            export_format = request.query_params["export"]
-            dataset = OplogEntryResource().export(queryset)
-            try:
-                return HttpResponse(getattr(dataset, export_format))
-            except AttributeError:
-                return None
+    model = Oplog
 
-        serializer = OplogEntrySerializer(queryset, many=True)
-        return Response(serializer.data)
+    def test_func(self):
+        return verify_access(self.request.user, self.get_object().project)
 
+    def handle_no_permission(self):
+        messages.error(self.request, "You do not have permission to access that.")
+        return redirect("oplog:index")
 
-# TODO: The use of DRF and DRF API keys will be DEPRECATED in the near future and this section will need to be removed
-class OplogViewSet(viewsets.ModelViewSet):
-    queryset = Oplog.objects.all()
-    serializer_class = OplogSerializer
-    permission_classes = [HasAPIKey | IsAuthenticated]
+    def get(self, *args, **kwargs):
+        obj = self.get_object()
+
+        queryset = obj.entries.all()
+        opts = queryset.model._meta
+
+        response = HttpResponse(
+            content_type="text/csv",
+            headers={"Content-Disposition": 'attachment; filename="export.csv"'},
+        )
+
+        writer = csv.writer(response)
+        field_names = [field.name for field in opts.fields]
+
+        # Add the tags field to the list of fields
+        field_names.append("tags")
+
+        # Write the headers to the csv file
+        writer.writerow(field_names)
+
+        for obj in queryset:
+            values = []
+            for field in field_names:
+                # Special case for oplog_id to write the ID of the oplog instead of the object
+                if field == "oplog_id":
+                    values.append(getattr(obj, field).id)
+                else:
+                    values.append(getattr(obj, field))
+                # Special case for tags to write a comma-separated list of tag names
+                if field == "tags":
+                    values.append(", ".join([tag.name for tag in obj.tags.all()]))
+            writer.writerow(values)
+
+        return response

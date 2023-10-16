@@ -4,6 +4,139 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.1] - 27 September 2023
+
+### Added
+
+* Added `short_name` and `address` fields to the company information for use in report templates (Closes #339)
+
+### Fixed
+
+* Fixed the activity log export returning incorrect csv files (Fixes #341)
+
+### Changed
+
+* Removed the restriction on backup commands that prevented them from being run on if `postgres` was set as the username (Closes #340)
+
+## [4.0.0] - 20 September 2023
+
+### Added
+
+* Added a "People" tab to the project dashboard that shows the project's assignments and client contacts
+* Added configuration options for managing browser sessions
+  * `SESSION_COOKIE_AGE` sets the number of seconds a session cookie will last before expiring
+  * `SESSION_EXPIRE_AT_BROWSER_CLOSE` sets whether the session cookie will expire when the browser is closed
+  * `SESSION_SAVE_EVERY_REQUEST` sets whether the session cookie will be saved on every request
+* Added support for two-factor authentication using TOTP
+* Added support for adding contacts to projects
+  * Supports creating project-specific contacts and adding contacts from the client
+  * Project contacts appear under the new `contacts` key in the report data
+  * A project contact can be flagged as the primary contact and mark the contact as the report recipient
+  * The primary contact appears under the new `recipient` key in the report data 
+* Added autocomplete options to filter forms for the finding, domain, and server libraries
+* Added an option to copy an activity log entry to your clipboard as JSON for easier sharing
+* Added an option to the `review_cloud_infrastructure()` task to only report Digital Ocean droplets that are currently running
+
+### Changed
+
+* Separated the project form into two forms: one for the project details and assignments and one for project components (e.g., white cards, objectives)
+  * This allows accounts with the `user` role to edit project components without permission to edit the project or its assignments
+* Moved project assignments to the new "People" tab on the project dashboard
+* Hid menus and buttons for features that are not available to the current user
+* Access to the admin console is now routed through the main login form to require 2FA (if enabled for the user)
+* The CVSS Vector and "added as blank" fields on report findings are now optional as they were meant to be
+
+### Removed
+
+* Removed the legacy REST API deprecated in Ghostwriter v3
+* Removed the unused `restricted` account role
+  * This is a clean-up for the release candidate; the `restricted` role was experimental and never implemented in the access controls
+* Removed the `user` role's privileges to create, edit, and delete project assignments and client contacts to better adhere to the role's intended permissions
+* Removed permissions for updating report templates via the GraphQL API
+  * This option will return in a future release when it is possible to upload a template file via the API
+
+## [3.2.12] - 18 September 2023
+
+### Added
+
+* Added the option to configure a default paragraph style for when you do not want to use the built-in default `Normal` style (PR #307)
+  * Thanks to @federicodotta  for the submission!
+
+### Changed
+
+* The `restore` command will now revoke open database connections to prevent errors when restoring a database backup (PR #335)
+  * Thanks to @marcioalm for the submission!
+
+## [3.2.11] - 5 September 2023
+
+### Added
+
+* Added CVSS and tags to the finding rows in the Excel workbook report (xlsx)
+
+### Fixed
+
+* Fixed the `project_type` keyword not working in report generation
+
+## [3.2.10] - 13 July 2023
+
+### Fixed
+
+* Adjusted logic for marking a domain as expired when syncing with Namecheap
+  * A domain marked as auto-renewable can expire, so Ghostwriter will now also mark a domain as expired and disable auto-renew if the API response has `AutoRenew` and `IsExpired` both set to `true`
+
+## [3.2.9] - 13 June 2023
+
+### Added
+
+* Added CVSS and tags to the finding rows in the Excel workbook report (xlsx)
+
+### Changed
+
+* Added a linter error message to offer suggestions for the often confusing `expected token 'end of print statement', got 'such'` Jinja2 syntax error
+
+### Fixed
+
+* The linter will now recognize the `id` value on findings as valid
+
+### Security
+
+* Added checks to escape potential formulas in Excel workbooks
+  * Please see security advisory for details: [https://github.com/GhostManager/Ghostwriter/security/advisories/GHSA-6367-mm8f-96gr](https://github.com/GhostManager/Ghostwriter/security/advisories/GHSA-6367-mm8f-96gr)
+
+## [3.2.8] - 24 May 2023
+
+### Added
+
+* Added a popover tooltip to the dashboard calendar's events to show the full title and additional details about the event
+* Added a `get_item` filter for use in report templates that allows you to retrieve a single item from a list of items
+* Added the Sugar parser to the JavaScript to improve international date parsing
+
+### Changed
+
+* Assignments displayed in the calendar and on the dashboard now show the project role for the assignment (Closes #311)
+* The server will now allow domains with expiration dates in the past to be checked out if auto-renew is enabled
+* Updated the pre-built Ghostwriter CLI binaries to v0.2.13
+
+### Fixed
+
+* Fixed an issue with the domain expiration dates sorting as integers
+* Fixed an issue that could prevent releasing a domain if the domain's registrar was empty
+
+## [v3.2.7] - 1 May 2023
+
+### Added
+
+* Added support for exporting and importing tags for the current import/export models (log entries, domains, servers, and findings)
+
+### Changed
+
+* The legacy REST API key notification for new activity logs now displays the log's ID to be used with the API and extensions like `mythic_sync` and `cobalt_sync`
+* When creating a new activity log from the project dashboard, that project will now be automatically selected for the new log
+
+### Fixed
+
+* Fixed sidebar search boxes not working as intended following changes in v3.2.3 (Closes #294)
+
 ## [v3.2.6] - 10 April 2023
 
 ### Changed
