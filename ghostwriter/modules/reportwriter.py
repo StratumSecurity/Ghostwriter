@@ -19,10 +19,6 @@ from string import ascii_letters
 from django.conf import settings
 from django.utils.dateformat import format as dateformat
 
-# Django Imports
-from django.conf import settings
-from django.utils.dateformat import format as dateformat
-
 # 3rd Party Libraries
 import docx
 import jinja2
@@ -1724,6 +1720,7 @@ class Reportwriter:
             finding["network_detection_techniques_rt"] = RichText(
                 strip_html(finding["network_detection_techniques"]),
                 color=get_value_from_key(FindingStatusColor, strip_html(finding["network_detection_techniques"]),)
+            )
             finding["references_rt"] = render_subdocument(finding["references"], finding, p_style)
 
         # Client Notes
