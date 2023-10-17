@@ -1,9 +1,11 @@
 # Django Imports
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 
 # Ghostwriter Libraries
+from ghostwriter.home.templatetags.custom_tags import is_contractor
 from ghostwriter.reporting.models import ReportFindingLink
 
 from .filters import ReportFindingFilter
@@ -16,6 +18,10 @@ def report_findings_list(request):
     **Template**
     :template:`stratum/report_findings_list.html`
     """
+    if is_contractor(request.user):
+        messages.error(request, "You do not have the necessary permission to view this page.")
+        return redirect("home:dashboard")
+
     findings = (
         ReportFindingLink.objects.select_related("severity", "finding_type", "report")
         .all()

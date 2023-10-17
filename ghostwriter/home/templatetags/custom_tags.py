@@ -34,6 +34,15 @@ def has_group(user, group_name):
     return bool(group in user.groups.all())
 
 
+@register.filter(name="is_contractor")
+def is_contractor(user):
+    """
+    Check if individual :model:`users.User` is linked to the contractor group
+    :model:`djanjo.contrib.auth.Group`.
+    """
+    return has_group(user, 'contractor')
+
+
 @register.filter(name="get_groups")
 def get_groups(user):
     """
