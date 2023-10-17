@@ -1279,7 +1279,7 @@ class Reportwriter:
                     par = self._replace_and_write(part.text, par, finding)
         return par
 
-    def _create_list_paragraph(self, prev_p, level, num=False, alignment=WD_ALIGN_PARAGRAPH.LEFT):
+    def _create_list_paragraph(self, prev_p, level, num=False, alignment=WD_ALIGN_PARAGRAPH.JUSTIFY):
         """
         Create a new paragraph in the document for a list.
 
@@ -1558,7 +1558,7 @@ class Reportwriter:
                                         # Create paragraph and apply the ``CodeBlock`` style
                                         p = self.sacrificial_doc.add_paragraph(code_line)
                                         p.style = "CodeBlock"
-                                        p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                                        p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
 
                 # OL & UL – Ordered/Numbered & Unordered Lists
                 elif tag_name in ("ol", "ul"):
