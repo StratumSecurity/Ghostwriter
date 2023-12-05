@@ -429,10 +429,10 @@ class ReportFindingLink(models.Model):
         validators=[MinValueValidator(1)],
     )
     affected_entities = models.TextField(
-        "Affected Entities",
+        "Details",
         null=True,
         blank=True,
-        help_text="Provide a list of the affected entities (e.g. domains, hostnames, IP addresses)",
+        help_text="Provide details of the finding and how to reproduce",
     )
     description = models.TextField(
         "Description",
