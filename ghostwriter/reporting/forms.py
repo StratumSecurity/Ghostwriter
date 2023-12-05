@@ -511,7 +511,7 @@ class ReportFindingLinkUpdateForm(forms.ModelForm):
             ),
             HTML(
                 """
-                <h4 class="icon list-icon">Affected Entities</h4>
+                <h4 class="icon list-icon">Details</h4>
                 <hr />
                 """
             ),
