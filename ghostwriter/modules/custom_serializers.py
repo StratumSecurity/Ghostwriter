@@ -132,7 +132,14 @@ class CompanyInfoSerializer(CustomModelSerializer):
 
     class Meta:
         model = CompanyInformation
-        exclude = ["id", "company_name", "company_short_name", "company_address", "company_twitter", "company_email"]
+        exclude = [
+            "id",
+            "company_name",
+            "company_short_name",
+            "company_address",
+            "company_twitter",
+            "company_email",
+        ]
 
 
 class EvidenceSerializer(TaggitSerializer, CustomModelSerializer):
@@ -232,7 +239,9 @@ class ReportSerializer(TaggitSerializer, CustomModelSerializer):
     creation = SerializerMethodField("get_last_update")
     total_findings = SerializerMethodField("get_total_findings")
 
-    findings = FindingLinkSerializer(source="reportfindinglink_set", many=True, exclude=["id", "report"])
+    findings = FindingLinkSerializer(
+        source="reportfindinglink_set", many=True, exclude=["id", "report"]
+    )
 
     tags = TagListSerializerField()
 
@@ -593,7 +602,9 @@ class ProjectSerializer(TaggitSerializer, CustomModelSerializer):
 
     timezone = TimeZoneSerializerField()
 
-    notes = ProjectNoteSerializer(source="projectnote_set", many=True, exclude=["id", "project"])
+    notes = ProjectNoteSerializer(
+        source="projectnote_set", many=True, exclude=["id", "project"]
+    )
 
     tags = TagListSerializerField()
 
@@ -643,7 +654,9 @@ class ProjectInfrastructureSerializer(CustomModelSerializer):
         many=True,
         exclude=["id", "project", "operator", "client"],
     )
-    cloud = TransientServerSerializer(source="transientserver_set", many=True, exclude=["id", "project", "operator"])
+    cloud = TransientServerSerializer(
+        source="transientserver_set", many=True, exclude=["id", "project", "operator"]
+    )
     servers = ServerHistorySerializer(
         source="serverhistory_set",
         many=True,
@@ -714,13 +727,27 @@ class ReportDataSerializer(CustomModelSerializer):
     )
     client = ClientSerializer(source="project.client")
     recipient = SerializerMethodField("get_recipient")
-    contacts = ProjectContactSerializer(source="project.projectcontact_set", many=True, exclude=["id", "project"])
-    team = ProjectAssignmentSerializer(source="project.projectassignment_set", many=True, exclude=["id", "project"])
-    objectives = ProjectObjectiveSerializer(source="project.projectobjective_set", many=True, exclude=["id", "project"])
-    targets = ProjectTargetSerializer(source="project.projecttarget_set", many=True, exclude=["id", "project"])
-    scope = ProjectScopeSerializer(source="project.projectscope_set", many=True, exclude=["id", "project"])
-    deconflictions = DeconflictionSerializer(source="project.deconfliction_set", many=True, exclude=["id", "project"])
-    whitecards = WhiteCardSerializer(source="project.whitecard_set", many=True, exclude=["id", "project"])
+    contacts = ProjectContactSerializer(
+        source="project.projectcontact_set", many=True, exclude=["id", "project"]
+    )
+    team = ProjectAssignmentSerializer(
+        source="project.projectassignment_set", many=True, exclude=["id", "project"]
+    )
+    objectives = ProjectObjectiveSerializer(
+        source="project.projectobjective_set", many=True, exclude=["id", "project"]
+    )
+    targets = ProjectTargetSerializer(
+        source="project.projecttarget_set", many=True, exclude=["id", "project"]
+    )
+    scope = ProjectScopeSerializer(
+        source="project.projectscope_set", many=True, exclude=["id", "project"]
+    )
+    deconflictions = DeconflictionSerializer(
+        source="project.deconfliction_set", many=True, exclude=["id", "project"]
+    )
+    whitecards = WhiteCardSerializer(
+        source="project.whitecard_set", many=True, exclude=["id", "project"]
+    )
     infrastructure = ProjectInfrastructureSerializer(source="project")
     findings = FindingLinkSerializer(
         source="reportfindinglink_set",
@@ -753,7 +780,11 @@ class ReportDataSerializer(CustomModelSerializer):
             "client",
         ]
     )
-    logs = OplogSerializer(source="project.oplog_set", many=True, exclude=["id", "mute_notifications", "project"])
+    logs = OplogSerializer(
+        source="project.oplog_set",
+        many=True,
+        exclude=["id", "mute_notifications", "project"],
+    )
     company = SerializerMethodField("get_company_info")
     tools = SerializerMethodField("get_tools")
 
@@ -848,17 +879,31 @@ class ReportDataSerializer(CustomModelSerializer):
         rep["totals"]["team"] = total_team
         rep["totals"]["targets"] = total_targets
 
-        def _get_total(crit_findings, high_findings, med_findings, low_findings, info_findings):
-            return crit_findings * 25 + high_findings * 10 + med_findings * 5 + low_findings * 3 + info_findings * 1
+        def _get_total(
+            crit_findings, high_findings, med_findings, low_findings, info_findings
+        ):
+            return (
+                crit_findings * 25
+                + high_findings * 10
+                + med_findings * 5
+                + low_findings * 3
+                + info_findings * 1
+            )
 
         def _get_score(total, mean, std):
             return (mean - total) / std
 
         def _get_findings_by_type(findings, type):
-            return list(filter(lambda finding: finding["finding_type"].lower() == type, findings))
+            return list(
+                filter(
+                    lambda finding: finding["finding_type"].lower() == type, findings
+                )
+            )
 
         def _get_findings_by_severity(findings, severity):
-            return list(filter(lambda f: f["severity"].lower() == severity.lower(), findings))
+            return list(
+                filter(lambda f: f["severity"].lower() == severity.lower(), findings)
+            )
 
         # Calculate SD Score - in statistics this is called Z-Score
         # This one is the total for all findings in the report
@@ -878,17 +923,33 @@ class ReportDataSerializer(CustomModelSerializer):
         netsec_external_findings = _get_findings_by_type(findings, netsec_external)
 
         netsec_internal_total = _get_total(
-            len(_get_findings_by_severity(netsec_internal_findings, Severity.CRIT.value)),
-            len(_get_findings_by_severity(netsec_internal_findings, Severity.HIGH.value)),
-            len(_get_findings_by_severity(netsec_internal_findings, Severity.MED.value)),
-            len(_get_findings_by_severity(netsec_internal_findings, Severity.LOW.value)),
+            len(
+                _get_findings_by_severity(netsec_internal_findings, Severity.CRIT.value)
+            ),
+            len(
+                _get_findings_by_severity(netsec_internal_findings, Severity.HIGH.value)
+            ),
+            len(
+                _get_findings_by_severity(netsec_internal_findings, Severity.MED.value)
+            ),
+            len(
+                _get_findings_by_severity(netsec_internal_findings, Severity.LOW.value)
+            ),
             len(_get_findings_by_severity(netsec_internal_findings, Severity.BP.value)),
         )
         netsec_external_total = _get_total(
-            len(_get_findings_by_severity(netsec_external_findings, Severity.CRIT.value)),
-            len(_get_findings_by_severity(netsec_external_findings, Severity.HIGH.value)),
-            len(_get_findings_by_severity(netsec_external_findings, Severity.MED.value)),
-            len(_get_findings_by_severity(netsec_external_findings, Severity.LOW.value)),
+            len(
+                _get_findings_by_severity(netsec_external_findings, Severity.CRIT.value)
+            ),
+            len(
+                _get_findings_by_severity(netsec_external_findings, Severity.HIGH.value)
+            ),
+            len(
+                _get_findings_by_severity(netsec_external_findings, Severity.MED.value)
+            ),
+            len(
+                _get_findings_by_severity(netsec_external_findings, Severity.LOW.value)
+            ),
             len(_get_findings_by_severity(netsec_external_findings, Severity.BP.value)),
         )
 
@@ -896,12 +957,42 @@ class ReportDataSerializer(CustomModelSerializer):
         # The hardcoded literals need to be updated once in a while to update the rolling average
         # Mean and STDs should be based off the past three years as the security landscape changes
         score_type_data = [
-            ("appsec", findings_score_total, 39.44715447, 33.86162857),
-            ("wireless", findings_score_total, 37.33802817, 47.06631332),
-            (netsec_internal, netsec_internal_total, 64.30909091, 56.55371468),
-            (netsec_external, netsec_external_total, 37.33802817, 47.06631332),
-            ("cloud", findings_score_total, 124.48, 63.49810706),
-            ("physical", findings_score_total, 64.30909091, 56.55371468),
+            (
+                "appsec",
+                findings_score_total,
+                settings.SD_APPSEC_MEAN,
+                settings.SD_APPSEC_STD,
+            ),
+            (
+                "wireless",
+                findings_score_total,
+                settings.SD_WIRELESS_MEAN,
+                settings.SD_WIRELESS_STD,
+            ),
+            (
+                netsec_internal,
+                netsec_internal_total,
+                settings.SD_NETSEC_IPT_MEAN,
+                settings.SD_NETSEC_IPT_STD,
+            ),
+            (
+                netsec_external,
+                netsec_external_total,
+                settings.SD_NETSEC_EPT_MEAN,
+                settings.SD_NETSEC_EPT_STD,
+            ),
+            (
+                "cloud",
+                findings_score_total,
+                settings.SD_CLOUD_MEAN,
+                settings.SD_CLOUD_STD,
+            ),
+            (
+                "physical",
+                findings_score_total,
+                settings.SD_PHYSICAL_MEAN,
+                settings.SD_PHYSICAL_STD,
+            ),
         ]
         for d in score_type_data:
             mean = d[2]

@@ -19,13 +19,15 @@ def report_findings_list(request):
     :template:`stratum/report_findings_list.html`
     """
     if is_contractor(request.user):
-        messages.error(request, "You do not have the necessary permission to view this page.")
+        messages.error(
+            request, "You do not have the necessary permission to view this page."
+        )
         return redirect("home:dashboard")
 
     findings = (
         ReportFindingLink.objects.select_related("severity", "finding_type", "report")
         .all()
-        .order_by("severity__weight", "-cvss_score", "finding_type", "title")
+        .order_by("severity__weight", "-report__creation", "finding_type", "title")
     )
     findings_filter = ReportFindingFilter(request.GET, queryset=findings)
 

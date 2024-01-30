@@ -16,7 +16,6 @@
 **/coverage
 
 # Exclude secrets and other hidden files
-**/.env
 **/.aws
 **/.ssh
 **/.DS_Store
