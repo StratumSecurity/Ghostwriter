@@ -53,6 +53,7 @@ from ghostwriter.shepherd.models import (
     TransientServer,
 )
 from ghostwriter.stratum.enums import Severity
+from ghostwriter.stratum.findings_chart import format_chart_data
 from ghostwriter.users.models import User
 
 
@@ -861,7 +862,7 @@ class ReportDataSerializer(CustomModelSerializer):
                 medium_findings += 1
             elif severity == Severity.LOW.value.lower():
                 low_findings += 1
-            elif severity == Severity.BP.value.lower():
+            elif severity == Severity.INFO.value.lower():
                 info_findings += 1
             finding_order += 1
 
@@ -935,7 +936,9 @@ class ReportDataSerializer(CustomModelSerializer):
             len(
                 _get_findings_by_severity(netsec_internal_findings, Severity.LOW.value)
             ),
-            len(_get_findings_by_severity(netsec_internal_findings, Severity.BP.value)),
+            len(
+                _get_findings_by_severity(netsec_internal_findings, Severity.INFO.value)
+            ),
         )
         netsec_external_total = _get_total(
             len(
@@ -950,7 +953,9 @@ class ReportDataSerializer(CustomModelSerializer):
             len(
                 _get_findings_by_severity(netsec_external_findings, Severity.LOW.value)
             ),
-            len(_get_findings_by_severity(netsec_external_findings, Severity.BP.value)),
+            len(
+                _get_findings_by_severity(netsec_external_findings, Severity.INFO.value)
+            ),
         )
 
         # Service label, total, mean, and standard deviation
@@ -1010,43 +1015,15 @@ class ReportDataSerializer(CustomModelSerializer):
                 score = lower_bound
             rep["totals"]["sd_score_" + d[0]] = score
 
-        # Calculate the findings chart data variable
-        def _get_chart_data(findings):
-            chart_data = []
-            severity_indexes = list(reversed([e.value.lower() for e in Severity]))
-            for finding in findings:
-                # Have to strip HTML because it's in a field that takes HTML
-                category = strip_html(finding["replication_steps"])
-                # Replace spaces with newlines to wrap x-axis labels
-                category = category.replace(" ", "\n")
-
-                severity = finding["severity"].lower()
-                category_found = False
-
-                for data in chart_data:
-                    if data[0] == category:
-                        # Update the finding count for the severity
-                        # # +1 in the index is to adjust as the label is in the first index
-                        data[severity_indexes.index(severity) + 1] += 1
-                        category_found = True
-                        break
-
-                if not category_found:
-                    # Add new entry with category label and all zeros
-                    data = [category] + [0] * 5
-                    data[severity_indexes.index(severity) + 1] += 1
-                    chart_data.append(data)
-            return chart_data
-
-        rep["totals"]["chart_data"] = _get_chart_data(findings)
+        rep["totals"]["chart_data"] = format_chart_data(findings)
 
         # Check if there are any netsec findings, GW will hit this on report generation
         # for appsec reports where both are empty arrays and throw an error on report generation
         # Use all findings marked in report for these values in those cases
-        rep["totals"]["chart_data_internal"] = _get_chart_data(
+        rep["totals"]["chart_data_internal"] = format_chart_data(
             netsec_internal_findings if netsec_internal_findings else findings
         )
-        rep["totals"]["chart_data_external"] = _get_chart_data(
+        rep["totals"]["chart_data_external"] = format_chart_data(
             netsec_external_findings if netsec_external_findings else findings
         )
         return rep

@@ -7,7 +7,7 @@ MEAN = "mean"
 SD = "sd"
 BLUE = "#14588F"
 ORANGE = "#EC6403"
-FONT_FAMILY = "Arial Narrow"
+FONT_FAMILY = "Aptos"
 
 
 def _get_regions(x_normdist, plotdata):
@@ -20,9 +20,11 @@ def _get_regions(x_normdist, plotdata):
     ) | (x_normdist > (plotdata[MEAN] + 1 * plotdata[SD])) & (
         x_normdist <= (plotdata[MEAN] + 2 * plotdata[SD])
     )
-    far_above_and_below_average = (x_normdist >= (plotdata[MEAN] - 3 * plotdata[SD])) & (
-        x_normdist < (plotdata[MEAN] - 2 * plotdata[SD])
-    ) | (x_normdist > (plotdata[MEAN] + 2 * plotdata[SD])) & (
+    far_above_and_below_average = (
+        x_normdist >= (plotdata[MEAN] - 3 * plotdata[SD])
+    ) & (x_normdist < (plotdata[MEAN] - 2 * plotdata[SD])) | (
+        x_normdist > (plotdata[MEAN] + 2 * plotdata[SD])
+    ) & (
         x_normdist <= (plotdata[MEAN] + 3 * plotdata[SD])
     )
     return [average, above_and_below_average, far_above_and_below_average]

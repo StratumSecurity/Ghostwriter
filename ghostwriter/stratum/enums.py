@@ -7,13 +7,7 @@ class Severity(Enum):
     HIGH = "High"
     MED = "Medium"
     LOW = "Low"
-    BP = "Best Practice"
-
-
-class DifficultyExploitColor(Enum):
-    LOW = (Severity.LOW.value, "#F0582B")
-    MED = (Severity.MED.value, "#F6941F")
-    HIGH = (Severity.HIGH.value, "#8BC53F")
+    INFO = "Info"
 
 
 class FindingStatusColor(Enum):

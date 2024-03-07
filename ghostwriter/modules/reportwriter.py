@@ -52,7 +52,6 @@ from ghostwriter.reporting.models import Evidence
 
 # Custom code
 from ghostwriter.stratum.enums import (
-    DifficultyExploitColor,
     FindingStatusColor,
     Severity,
     get_value_from_key,
@@ -117,7 +116,9 @@ def filter_severity(findings, allowlist):
             if finding["severity"].lower() in allowlist:
                 filtered_values.append(finding)
     except (KeyError, TypeError):
-        logger.exception("Error parsing ``findings`` as a list of dictionaries: %s", findings)
+        logger.exception(
+            "Error parsing ``findings`` as a list of dictionaries: %s", findings
+        )
         raise InvalidFilterValue(
             "Invalid list of findings passed into `filter_severity()` filter; must be the `{{ findings }}` object"
         )
@@ -147,7 +148,9 @@ def filter_type(findings, allowlist):
             if finding["finding_type"].lower() in allowlist:
                 filtered_values.append(finding)
     except (KeyError, TypeError):
-        logger.exception("Error parsing ``findings`` as a list of dictionaries: %s", findings)
+        logger.exception(
+            "Error parsing ``findings`` as a list of dictionaries: %s", findings
+        )
         raise InvalidFilterValue(
             "Invalid list of findings passed into `filter_type()` filter; must be the `{{ findings }}` object"
         )
@@ -189,7 +192,9 @@ def compromised(targets):
             if target["compromised"]:
                 filtered_targets.append(target)
     except (KeyError, TypeError):
-        logger.exception("Error parsing ``targets`` as a list of dictionaries: %s", targets)
+        logger.exception(
+            "Error parsing ``targets`` as a list of dictionaries: %s", targets
+        )
         raise InvalidFilterValue(
             "Invalid list of targets passed into `compromised()` filter; must be the `{{ targets }}` object"
         )
@@ -212,7 +217,9 @@ def add_days(date, days):
         days = int(days)
     except ValueError:
         logger.exception("Error parsing ``days`` as an integer: %s", days)
-        raise InvalidFilterValue(f'Invalid integer ("{days}") passed into the `add_days()` filter')
+        raise InvalidFilterValue(
+            f'Invalid integer ("{days}") passed into the `add_days()` filter'
+        )
 
     try:
         date_obj = parse_datetime(date)
@@ -239,7 +246,9 @@ def add_days(date, days):
         new_date = dateformat(date_obj, settings.DATE_FORMAT)
     except ParserError:
         logger.exception("Error parsing ``date`` as a date: %s", date)
-        raise InvalidFilterValue(f'Invalid date string ("{date}") passed into the `add_days()` filter')
+        raise InvalidFilterValue(
+            f'Invalid date string ("{date}") passed into the `add_days()` filter'
+        )
     return new_date
 
 
@@ -259,7 +268,9 @@ def format_datetime(date, new_format):
         formatted_date = dateformat(date_obj, new_format)
     except ParserError:
         logger.exception("Error parsing ``date`` as a date: %s", date)
-        raise InvalidFilterValue(f'Invalid date string ("{date}") passed into the `format_datetime()` filter')
+        raise InvalidFilterValue(
+            f'Invalid date string ("{date}") passed into the `format_datetime()` filter'
+        )
     return formatted_date
 
 
@@ -270,7 +281,7 @@ def sort_findings(findings):
         Severity.HIGH.value.lower(): 65,
         Severity.MED.value.lower(): 20,
         Severity.LOW.value.lower(): 5,
-        Severity.BP.value.lower(): 1,
+        Severity.INFO.value.lower(): 1,
     }
     diff_of_exploit = {
         Severity.LOW.value.lower(): 3,
@@ -302,10 +313,14 @@ def get_item(lst, index):
         return lst[index]
     except TypeError:
         logger.exception("Error getting list index %s from this list: %s", index, lst)
-        raise InvalidFilterValue(f"Invalid list or string passed into the `get_item()` filter")
+        raise InvalidFilterValue(
+            f"Invalid list or string passed into the `get_item()` filter"
+        )
     except IndexError:
         logger.exception("Error getting index %s from this list: %s", index, lst)
-        raise InvalidFilterValue(f"Invalid or unavailable index passed into the `get_item()` filter")
+        raise InvalidFilterValue(
+            f"Invalid or unavailable index passed into the `get_item()` filter"
+        )
 
 
 def regex_search(text, regex):
@@ -332,7 +347,9 @@ def prepare_jinja2_env(debug=False):
     else:
         undefined = jinja2.make_logging_undefined(logger=logger, base=jinja2.Undefined)
 
-    env = jinja2.sandbox.SandboxedEnvironment(undefined=undefined, extensions=["jinja2.ext.debug"], autoescape=True)
+    env = jinja2.sandbox.SandboxedEnvironment(
+        undefined=undefined, extensions=["jinja2.ext.debug"], autoescape=True
+    )
     env.filters["filter_severity"] = filter_severity
     env.filters["filter_type"] = filter_type
     env.filters["strip_html"] = strip_html
@@ -625,14 +642,18 @@ class Reportwriter:
             """The style comes from the outer-scope variable ``par.style.name``."""
             style = par.style.style_id
             return (
-                "w:abstractNum[" '{single}w:lvl[@w:ilvl="{level}"]/w:pStyle[@w:val="{style}"]' "]/@w:abstractNumId"
+                "w:abstractNum["
+                '{single}w:lvl[@w:ilvl="{level}"]/w:pStyle[@w:val="{style}"]'
+                "]/@w:abstractNumId"
             ).format(style=style, **xpath_options[prefer_single])
 
         def type_xpath(prefer_single=True):
             """The type is from the outer-scope variable ``num``."""
             t = "decimal" if num else "bullet"
             return (
-                "w:abstractNum[" '{single}w:lvl[@w:ilvl="{level}"]/w:numFmt[@w:val="{type}"]' "]/@w:abstractNumId"
+                "w:abstractNum["
+                '{single}w:lvl[@w:ilvl="{level}"]/w:numFmt[@w:val="{type}"]'
+                "]/@w:abstractNumId"
             ).format(type=t, **xpath_options[prefer_single])
 
         def get_abstract_id():
@@ -652,10 +673,17 @@ class Reportwriter:
                         return min(int(x) for x in ids)
             return 0
 
-        if prev is None or prev._p.pPr is None or prev._p.pPr.numPr is None or prev._p.pPr.numPr.numId is None:
+        if (
+            prev is None
+            or prev._p.pPr is None
+            or prev._p.pPr.numPr is None
+            or prev._p.pPr.numPr.numId is None
+        ):
             if level is None:
                 level = 0
-            numbering = self.sacrificial_doc.part.numbering_part.numbering_definitions._numbering
+            numbering = (
+                self.sacrificial_doc.part.numbering_part.numbering_definitions._numbering
+            )
             # Compute the abstract ID first by style, then by ``num``
             abstract = get_abstract_id()
             # Set the concrete numbering based on the abstract numbering ID
@@ -701,20 +729,26 @@ class Reportwriter:
                 if key == "font-family":
                     # Some fonts include a list of values – get just the first one
                     font_list = value.split(",")
-                    priority_font = font_list[0].replace("'", "").replace('"', "").strip()
+                    priority_font = (
+                        font_list[0].replace("'", "").replace('"', "").strip()
+                    )
                     value = priority_font
                 if key == "color":
                     # Convert the color hex value to an ``RGBColor`` object
                     value = value.replace("#", "")
                     n = 2
-                    hex_color = [hex(int(value[i : i + n], 16)) for i in range(0, len(value), n)]
+                    hex_color = [
+                        hex(int(value[i : i + n], 16)) for i in range(0, len(value), n)
+                    ]
                     if self.report_type == "pptx":
                         value = PptxRGBColor(*map(lambda v: int(v, 16), hex_color))
                     else:
                         value = RGBColor(*map(lambda v: int(v, 16), hex_color))
                 tag_styles[key] = value
             except Exception:
-                logger.exception("Failed to convert one of the inline styles for a text run")
+                logger.exception(
+                    "Failed to convert one of the inline styles for a text run"
+                )
         return tag_styles
 
     def _process_evidence(self, evidence, par):
@@ -746,7 +780,9 @@ class Reportwriter:
                         width = Inches(4.5)
                         height = Inches(3)
                         # Create new textbox, textframe, paragraph, and run
-                        textbox = self.finding_slide.shapes.add_textbox(left, top, width, height)
+                        textbox = self.finding_slide.shapes.add_textbox(
+                            left, top, width, height
+                        )
                         text_frame = textbox.text_frame
                         p = text_frame.paragraphs[0]
                         run = p.add_run()
@@ -778,7 +814,9 @@ class Reportwriter:
                     top = Inches(1.65)
                     left = Inches(8)
                     width = Inches(4.5)
-                    self.finding_slide.shapes.add_picture(file_path, left, top, width=width)
+                    self.finding_slide.shapes.add_picture(
+                        file_path, left, top, width=width
+                    )
                 else:
                     par.alignment = WD_ALIGN_PARAGRAPH.CENTER
                     run = par.add_run()
@@ -801,7 +839,9 @@ class Reportwriter:
                             f'The evidence file, `{evidence["friendly_name"]},` was not recognized as a {extension} file. '
                             "Try opening it, exporting as desired type, and re-uploading it."
                         )
-                        raise UnrecognizedImageError(error_msg) from docx.image.exceptions.UnrecognizedImageError
+                        raise UnrecognizedImageError(
+                            error_msg
+                        ) from docx.image.exceptions.UnrecognizedImageError
 
                     if self.enable_borders:
                         # Add the border – see Ghostwriter Wiki for documentation
@@ -857,7 +897,9 @@ class Reportwriter:
         if parent_element is not None:
             parent_element.remove(p)
         else:
-            logger.warning("Could not delete paragraph in because it had no parent element")
+            logger.warning(
+                "Could not delete paragraph in because it had no parent element"
+            )
 
     def _write_xml(self, text, par, styles):
         """
@@ -957,12 +999,16 @@ class Reportwriter:
             else:
                 font.superscript = styles["superscript"]
 
-    def _add_image(self, par, fig, filename, pad=0.1, image_width=None, image_height=None):
+    def _add_image(
+        self, par, fig, filename, pad=0.1, image_width=None, image_height=None
+    ):
         # Build the filepath to save the figure and add to report
         # Strip special chars except for - and _
         allowed = ascii_letters + "-" + "_"
         new_file_name = "".join(list(filter(allowed.__contains__, filename)))
-        directory = f'{settings.MEDIA_ROOT}/evidence/{self.report_json["project"]["id"]}'
+        directory = (
+            f'{settings.MEDIA_ROOT}/evidence/{self.report_json["project"]["id"]}'
+        )
 
         if not os.path.exists(directory):
             # Create a new directory because it does not exist
@@ -986,7 +1032,9 @@ class Reportwriter:
         # Close the current figure window to clear up memory
         plt.close(fig)
 
-    def _replace_and_write(self, text, par, finding, styles=ReportConstants.DEFAULT_STYLE_VALUES.copy()):
+    def _replace_and_write(
+        self, text, par, finding, styles=ReportConstants.DEFAULT_STYLE_VALUES.copy()
+    ):
         """
         Find and replace template keywords in the provided text.
 
@@ -1006,13 +1054,19 @@ class Reportwriter:
         # Do this first so strings are not detected as potential expressions–e.g., ``{{.ref ...}}``
         if "{{.client}}" in text:
             if self.report_json["client"]["short_name"]:
-                text = text.replace("{{.client}}", self.report_json["client"]["short_name"])
+                text = text.replace(
+                    "{{.client}}", self.report_json["client"]["short_name"]
+                )
             else:
                 text = text.replace("{{.client}}", self.report_json["client"]["name"])
         if "{{.project_start}}" in text:
-            text = text.replace("{{.project_start}}", self.report_json["project"]["start_date"])
+            text = text.replace(
+                "{{.project_start}}", self.report_json["project"]["start_date"]
+            )
         if "{{.project_end}}" in text:
-            text = text.replace("{{.project_end}}", self.report_json["project"]["end_date"])
+            text = text.replace(
+                "{{.project_end}}", self.report_json["project"]["end_date"]
+            )
         if "{{.project_type}}" in text:
             text = text.replace(
                 "{{.project_type}}",
@@ -1061,9 +1115,17 @@ class Reportwriter:
                     def _build_bar_chart(self, par, keyword, label):
                         par.alignment = WD_ALIGN_PARAGRAPH.LEFT
                         fig = build_bar_chart(self.report_json["totals"][label])
-                        # Subtracting - 3.5 from the width to make it fit perfectly on the page with the font sizes
-                        # to prevent overlapping on the x-axis and make it more readable
-                        self._add_image(par, fig, keyword, image_width=fig.get_figwidth() - 3.5, image_height=fig.get_figheight())
+                        # Only add image if we have data, None is returned when we don't have any findings
+                        if fig:
+                            # Subtracting - 3.5 from the width to make it fit perfectly on the page with the font sizes
+                            # to prevent overlapping on the x-axis and make it more readable
+                            self._add_image(
+                                par,
+                                fig,
+                                keyword,
+                                image_width=fig.get_figwidth() - 3.5,
+                                image_height=fig.get_figheight(),
+                            )
 
                     if keyword == "chart_bar":
                         _build_bar_chart(self, par, keyword, "chart_data")
@@ -1081,7 +1143,9 @@ class Reportwriter:
                     def _build_sd_graph(self, par, keyword, label):
                         par.alignment = WD_ALIGN_PARAGRAPH.CENTER
                         fig = build_sd_graph(self.report_json["totals"][label])
-                        self._add_image(par, fig, keyword, image_height=fig.get_figheight())
+                        self._add_image(
+                            par, fig, keyword, image_height=fig.get_figheight()
+                        )
 
                     # Unfortunately had to register new tags until GW has a proper way to build charts
                     # into reports
@@ -1114,7 +1178,10 @@ class Reportwriter:
                         if (
                             keyword
                             # and keyword in finding["evidence"]
-                            and any(ev["friendly_name"] == keyword for ev in finding["evidence"])
+                            and any(
+                                ev["friendly_name"] == keyword
+                                for ev in finding["evidence"]
+                            )
                             and not keyword.startswith("ref ")
                         ):
                             logger.debug(
@@ -1248,7 +1315,9 @@ class Reportwriter:
             # Any other tags are unexpected and ignored
             else:
                 if tag_name not in self.tag_allowlist:
-                    logger.warning("Encountered an unexpected nested HTML tag: %s", tag_name)
+                    logger.warning(
+                        "Encountered an unexpected nested HTML tag: %s", tag_name
+                    )
 
             return styles_dict
 
@@ -1293,14 +1362,18 @@ class Reportwriter:
                             if tag_contents[0].name:
                                 if tag_contents[0].name == "a":
                                     run_styles["hyperlink"] = True
-                                    run_styles["hyperlink_url"] = tag_contents[0]["href"]
+                                    run_styles["hyperlink_url"] = tag_contents[0][
+                                        "href"
+                                    ]
                                     content_text = tag_contents[0].text
 
                             # Combine the styles to carry them over to the next loop
                             merged_styles = merge_styles(run_styles, parent_styles)
 
                             # Recursively process the nested tags
-                            self._process_nested_html_tags(tag_contents, par, finding, styles=merged_styles)
+                            self._process_nested_html_tags(
+                                tag_contents, par, finding, styles=merged_styles
+                            )
                     elif tag_name:
                         logger.warning(
                             "Ignoring a nested HTML tag not in the allowlist: %s",
@@ -1314,7 +1387,9 @@ class Reportwriter:
                     merged_styles = merge_styles(run_styles, parent_styles)
 
                     # Write the text for this run
-                    par = self._replace_and_write(content_text, par, finding, merged_styles)
+                    par = self._replace_and_write(
+                        content_text, par, finding, merged_styles
+                    )
 
                     # Reset temporary run styles
                     run_styles = ReportConstants.DEFAULT_STYLE_VALUES.copy()
@@ -1327,7 +1402,9 @@ class Reportwriter:
                     par = self._replace_and_write(part.text, par, finding)
         return par
 
-    def _create_list_paragraph(self, prev_p, level, num=False, alignment=WD_ALIGN_PARAGRAPH.JUSTIFY):
+    def _create_list_paragraph(
+        self, prev_p, level, num=False, alignment=WD_ALIGN_PARAGRAPH.JUSTIFY
+    ):
         """
         Create a new paragraph in the document for a list.
 
@@ -1487,7 +1564,9 @@ class Reportwriter:
             # Handle tags that are not handled above
             else:
                 if not isinstance(part, NavigableString):
-                    logger.warning("Encountered an unknown tag for a list: %s", part.name)
+                    logger.warning(
+                        "Encountered an unknown tag for a list: %s", part.name
+                    )
                 else:
                     if part.strip() != "":
                         p = self._create_list_paragraph(prev_p, level, num)
@@ -1582,7 +1661,9 @@ class Reportwriter:
                             width = Inches(4.5)
                             height = Inches(3)
                             # Create new textbox, textframe, paragraph, and run
-                            textbox = self.finding_slide.shapes.add_textbox(left, top, width, height)
+                            textbox = self.finding_slide.shapes.add_textbox(
+                                left, top, width, height
+                            )
                             text_frame = textbox.text_frame
                             for content in contents:
                                 for code in content:
@@ -1604,7 +1685,9 @@ class Reportwriter:
                                     parts = code.split("\r\n")
                                     for code_line in parts:
                                         # Create paragraph and apply the ``CodeBlock`` style
-                                        p = self.sacrificial_doc.add_paragraph(code_line)
+                                        p = self.sacrificial_doc.add_paragraph(
+                                            code_line
+                                        )
                                         p.style = "CodeBlock"
                                         p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
 
@@ -1653,7 +1736,9 @@ class Reportwriter:
             )
             raise DocxPackageNotFoundError from docx.opc.exceptions.PackageNotFoundError
         except Exception:
-            logger.exception("Failed to load the provided template document: %s", self.template_loc)
+            logger.exception(
+                "Failed to load the provided template document: %s", self.template_loc
+            )
 
         # Check for styles
         styles = self.word_doc.styles
@@ -1748,38 +1833,62 @@ class Reportwriter:
         for finding in context["findings"]:
             logger.info("Processing %s", finding["title"])
             # Create ``RichText()`` object for a colored severity category
-            finding["severity_rt"] = RichText(finding["severity"], color=finding["severity_color"])
-            finding["cvss_score_rt"] = RichText(finding["cvss_score"], color=finding["severity_color"])
-            finding["cvss_vector_rt"] = RichText(finding["cvss_vector"], color=finding["severity_color"])
+            finding["severity_rt"] = RichText(
+                finding["severity"], color=finding["severity_color"]
+            )
+            finding["cvss_score_rt"] = RichText(
+                finding["cvss_score"], color=finding["severity_color"]
+            )
+            finding["cvss_vector_rt"] = RichText(
+                finding["cvss_vector"], color=finding["severity_color"]
+            )
             # Create subdocuments for each finding section
-            finding["affected_entities_rt"] = render_subdocument(finding["affected_entities"], finding, p_style)
-            finding["description_rt"] = render_subdocument(finding["description"], finding, p_style)
-            finding["impact_rt"] = render_subdocument(finding["impact"], finding, p_style)
+            finding["affected_entities_rt"] = render_subdocument(
+                finding["affected_entities"], finding, p_style
+            )
+            finding["description_rt"] = render_subdocument(
+                finding["description"], finding, p_style
+            )
+            finding["impact_rt"] = render_subdocument(
+                finding["impact"], finding, p_style
+            )
 
             # Include a copy of ``mitigation`` as ``recommendation`` to match legacy context
-            mitigation_section = render_subdocument(finding["mitigation"], finding, p_style)
+            mitigation_section = render_subdocument(
+                finding["mitigation"], finding, p_style
+            )
             finding["mitigation_rt"] = mitigation_section
             finding["recommendation_rt"] = mitigation_section
 
-            finding["replication_steps_rt"] = render_subdocument(finding["replication_steps"], finding, p_style)
-            finding["host_detection_techniques_rt"] = RichText(
-                strip_html(finding["host_detection_techniques"]),
-                color=get_value_from_key(DifficultyExploitColor, strip_html(finding["host_detection_techniques"]),)
+            finding["replication_steps_rt"] = render_subdocument(
+                finding["replication_steps"], finding, p_style
+            )
+            finding["host_detection_techniques_rt"] = render_subdocument(
+                finding["host_detection_techniques"], finding, p_style
             )
             finding["network_detection_techniques_rt"] = RichText(
                 strip_html(finding["network_detection_techniques"]),
-                color=get_value_from_key(FindingStatusColor, strip_html(finding["network_detection_techniques"]),)
+                color=get_value_from_key(
+                    FindingStatusColor,
+                    strip_html(finding["network_detection_techniques"]),
+                ),
             )
-            finding["references_rt"] = render_subdocument(finding["references"], finding, p_style)
+            finding["references_rt"] = render_subdocument(
+                finding["references"], finding, p_style
+            )
 
         # Client Notes
-        context["client"]["note_rt"] = render_subdocument(context["client"]["note"], finding=None, p_style=p_style)
+        context["client"]["note_rt"] = render_subdocument(
+            context["client"]["note"], finding=None, p_style=p_style
+        )
         context["client"]["address_rt"] = render_subdocument(
             context["client"]["address"], finding=None, p_style=p_style
         )
 
         # Project Notes
-        context["project"]["note_rt"] = render_subdocument(context["project"]["note"], finding=None, p_style=p_style)
+        context["project"]["note_rt"] = render_subdocument(
+            context["project"]["note"], finding=None, p_style=p_style
+        )
 
         # Bar Charts
         context["project"]["chart_bar"] = "<p>{{.chart_bar}}</p>"
@@ -1804,19 +1913,27 @@ class Reportwriter:
         context["project"]["chart_sdscore_cloud_rt"] = render_subdocument(
             context["project"]["chart_sdscore_cloud"], finding=None
         )
-        context["project"]["chart_sdscore_wireless"] = "<p>{{.chart_sdscore_wireless}}</p>"
+        context["project"][
+            "chart_sdscore_wireless"
+        ] = "<p>{{.chart_sdscore_wireless}}</p>"
         context["project"]["chart_sdscore_wireless_rt"] = render_subdocument(
             context["project"]["chart_sdscore_wireless"], finding=None
         )
-        context["project"]["chart_sdscore_external"] = "<p>{{.chart_sdscore_external}}</p>"
+        context["project"][
+            "chart_sdscore_external"
+        ] = "<p>{{.chart_sdscore_external}}</p>"
         context["project"]["chart_sdscore_external_rt"] = render_subdocument(
             context["project"]["chart_sdscore_external"], finding=None
         )
-        context["project"]["chart_sdscore_internal"] = "<p>{{.chart_sdscore_internal}}</p>"
+        context["project"][
+            "chart_sdscore_internal"
+        ] = "<p>{{.chart_sdscore_internal}}</p>"
         context["project"]["chart_sdscore_internal_rt"] = render_subdocument(
             context["project"]["chart_sdscore_internal"], finding=None
         )
-        context["project"]["chart_sdscore_physical"] = "<p>{{.chart_sdscore_physical}}</p>"
+        context["project"][
+            "chart_sdscore_physical"
+        ] = "<p>{{.chart_sdscore_physical}}</p>"
         context["project"]["chart_sdscore_physical_rt"] = render_subdocument(
             context["project"]["chart_sdscore_physical"], finding=None
         )
@@ -1825,13 +1942,17 @@ class Reportwriter:
         for assignment in context["team"]:
             if isinstance(assignment, dict):
                 if assignment["note"]:
-                    assignment["note_rt"] = render_subdocument(assignment["note"], finding=None, p_style=p_style)
+                    assignment["note_rt"] = render_subdocument(
+                        assignment["note"], finding=None, p_style=p_style
+                    )
 
         # Contacts
         for contact in context["client"]["contacts"]:
             if isinstance(contact, dict):
                 if contact["note"]:
-                    contact["note_rt"] = render_subdocument(contact["note"], finding=None, p_style=p_style)
+                    contact["note_rt"] = render_subdocument(
+                        contact["note"], finding=None, p_style=p_style
+                    )
 
         # Objectives
         for objective in context["objectives"]:
@@ -1853,26 +1974,34 @@ class Reportwriter:
         for target in context["targets"]:
             if isinstance(target, dict):
                 if target["note"]:
-                    target["note_rt"] = render_subdocument(target["note"], finding=None, p_style=p_style)
+                    target["note_rt"] = render_subdocument(
+                        target["note"], finding=None, p_style=p_style
+                    )
 
         # Deconfliction Events
         for event in context["deconflictions"]:
             if isinstance(event, dict):
                 if event["description"]:
-                    event["description_rt"] = render_subdocument(event["description"], finding=None, p_style=p_style)
+                    event["description_rt"] = render_subdocument(
+                        event["description"], finding=None, p_style=p_style
+                    )
 
         # White Cards
         for card in context["whitecards"]:
             if isinstance(card, dict):
                 if card["description"]:
-                    card["description_rt"] = render_subdocument(card["description"], finding=None, p_style=p_style)
+                    card["description_rt"] = render_subdocument(
+                        card["description"], finding=None, p_style=p_style
+                    )
 
         # Infrastructure
         for asset_type in context["infrastructure"]:
             for asset in context["infrastructure"][asset_type]:
                 if isinstance(asset, dict):
                     if asset["note"]:
-                        asset["note_rt"] = render_subdocument(asset["note"], finding=None, p_style=p_style)
+                        asset["note_rt"] = render_subdocument(
+                            asset["note"], finding=None, p_style=p_style
+                        )
 
         return context
 
@@ -1899,15 +2028,23 @@ class Reportwriter:
         # Perform the necessary replacements
         if "{{.client}}" in text:
             if self.report_json["client"]["short_name"]:
-                text = text.replace("{{.client}}", self.report_json["client"]["short_name"])
+                text = text.replace(
+                    "{{.client}}", self.report_json["client"]["short_name"]
+                )
             else:
                 text = text.replace("{{.client}}", self.report_json["client"]["name"])
         if "{{.project_start}}" in text:
-            text = text.replace("{{.project_start}}", self.report_json["project"]["start_date"])
+            text = text.replace(
+                "{{.project_start}}", self.report_json["project"]["start_date"]
+            )
         if "{{.project_end}}" in text:
-            text = text.replace("{{.project_end}}", self.report_json["project"]["end_date"])
+            text = text.replace(
+                "{{.project_end}}", self.report_json["project"]["end_date"]
+            )
         if "{{.project_type}}" in text:
-            text = text.replace("{{.project_type}}", self.report_json["project"]["type"].lower())
+            text = text.replace(
+                "{{.project_type}}", self.report_json["project"]["type"].lower()
+            )
 
         # No evidence or captions in workbook cells
         text = text.replace("{{.caption}}", "Caption \u2013 ")
@@ -1919,7 +2056,9 @@ class Reportwriter:
                 if "evidence" in finding:
                     if (
                         keyword
-                        and any(ev["friendly_name"] == keyword for ev in finding["evidence"])
+                        and any(
+                            ev["friendly_name"] == keyword for ev in finding["evidence"]
+                        )
                         and not keyword.startswith("ref ")
                     ):
                         for ev in finding["evidence"]:
@@ -1954,7 +2093,10 @@ class Reportwriter:
         """
 
         # Create an in-memory Excel workbook with a named worksheet
-        xlsx_doc = Workbook(memory_object, {"in_memory": True, "strings_to_formulas": False, "strings_to_urls": False})
+        xlsx_doc = Workbook(
+            memory_object,
+            {"in_memory": True, "strings_to_formulas": False, "strings_to_urls": False},
+        )
         worksheet = xlsx_doc.add_worksheet("Findings")
 
         # Create a format for headers
@@ -2013,64 +2155,116 @@ class Reportwriter:
         row = 1
         for finding in self.report_json["findings"]:
             # Finding Name
-            worksheet.write_string(row, col, self._process_text_xlsx(finding["title"], finding), bold_format)
+            worksheet.write_string(
+                row,
+                col,
+                self._process_text_xlsx(finding["title"], finding),
+                bold_format,
+            )
             col += 1
 
             # Update severity format bg color with the finding's severity color
             severity_format.set_bg_color(finding["severity_color"])
 
             # Severity and CVSS information
-            worksheet.write_string(row, col, self._process_text_xlsx(finding["severity"], finding), severity_format)
+            worksheet.write_string(
+                row,
+                col,
+                self._process_text_xlsx(finding["severity"], finding),
+                severity_format,
+            )
             col += 1
             if isinstance(finding["cvss_score"], float):
                 worksheet.write_number(row, col, finding["cvss_score"], severity_format)
             else:
                 worksheet.write_string(
-                    row, col, self._process_text_xlsx(finding["cvss_score"], finding), severity_format
+                    row,
+                    col,
+                    self._process_text_xlsx(finding["cvss_score"], finding),
+                    severity_format,
                 )
             col += 1
-            worksheet.write_string(row, col, self._process_text_xlsx(finding["cvss_vector"], finding), severity_format)
+            worksheet.write_string(
+                row,
+                col,
+                self._process_text_xlsx(finding["cvss_vector"], finding),
+                severity_format,
+            )
             col += 1
 
             # Affected Entities
             if finding["affected_entities"]:
                 worksheet.write_string(
-                    row, col, self._process_text_xlsx(finding["affected_entities"], finding), asset_format
+                    row,
+                    col,
+                    self._process_text_xlsx(finding["affected_entities"], finding),
+                    asset_format,
                 )
             else:
                 worksheet.write_string(row, col, "N/A", asset_format)
             col += 1
 
             # Description
-            worksheet.write_string(row, col, self._process_text_xlsx(finding["description"], finding), wrap_format)
+            worksheet.write_string(
+                row,
+                col,
+                self._process_text_xlsx(finding["description"], finding),
+                wrap_format,
+            )
             col += 1
 
             # Impact
-            worksheet.write_string(row, col, self._process_text_xlsx(finding["impact"], finding), wrap_format)
+            worksheet.write_string(
+                row,
+                col,
+                self._process_text_xlsx(finding["impact"], finding),
+                wrap_format,
+            )
             col += 1
 
             # Recommendation
-            worksheet.write_string(row, col, self._process_text_xlsx(finding["recommendation"], finding), wrap_format)
+            worksheet.write_string(
+                row,
+                col,
+                self._process_text_xlsx(finding["recommendation"], finding),
+                wrap_format,
+            )
             col += 1
 
             # Replication
             worksheet.write_string(
-                row, col, self._process_text_xlsx(finding["replication_steps"], finding), wrap_format
+                row,
+                col,
+                self._process_text_xlsx(finding["replication_steps"], finding),
+                wrap_format,
             )
             col += 1
 
             # Detection
             worksheet.write_string(
-                row, col, self._process_text_xlsx(finding["host_detection_techniques"], finding), wrap_format
+                row,
+                col,
+                self._process_text_xlsx(finding["host_detection_techniques"], finding),
+                wrap_format,
             )
             col += 1
             worksheet.write_string(
-                row, col, self._process_text_xlsx(finding["network_detection_techniques"], finding), wrap_format
+                row,
+                col,
+                self._process_text_xlsx(
+                    finding["network_detection_techniques"], finding
+                ),
+                wrap_format,
             )
             col += 1
 
             # References
-            worksheet.write_string(row, col, self._process_text_xlsx(finding["references"], finding), wrap_format)
+            worksheet.write_string(
+                row,
+                col,
+                self._process_text_xlsx(finding["references"], finding),
+                wrap_format,
+            )
             col += 1
 
             # Collect the evidence, if any, from the finding's folder and insert inline with description
@@ -2079,15 +2273,31 @@ class Reportwriter:
             except Evidence.DoesNotExist:
                 evidence_queryset = []
             except Exception:
-                logger.exception("Query for evidence failed for finding %s", finding["id"])
+                logger.exception(
+                    "Query for evidence failed for finding %s", finding["id"]
+                )
                 evidence_queryset = []
-            evidence = [f.filename for f in evidence_queryset if f in self.image_extensions or self.text_extensions]
+            evidence = [
+                f.filename
+                for f in evidence_queryset
+                if f in self.image_extensions or self.text_extensions
+            ]
             finding_evidence_names = "\r\n".join(map(str, evidence))
-            worksheet.write_string(row, col, self._process_text_xlsx(finding_evidence_names, finding), wrap_format)
+            worksheet.write_string(
+                row,
+                col,
+                self._process_text_xlsx(finding_evidence_names, finding),
+                wrap_format,
+            )
             col += 1
 
             # Tags
-            worksheet.write_string(row, col, self._process_text_xlsx(", ".join(finding["tags"]), finding), wrap_format)
+            worksheet.write_string(
+                row,
+                col,
+                self._process_text_xlsx(", ".join(finding["tags"]), finding),
+                wrap_format,
+            )
 
             # Increment row counter and reset columns before moving on to next finding
             row += 1
@@ -2234,7 +2444,9 @@ class Reportwriter:
         self._delete_paragraph(text_frame.paragraphs[0])
 
         write_bullet(
-            text_frame, f"{self.report_json['project']['type']} assessment of {self.report_json['client']['name']}", 0
+            text_frame,
+            f"{self.report_json['project']['type']} assessment of {self.report_json['client']['name']}",
+            0,
         )
         write_bullet(
             text_frame,
@@ -2338,7 +2550,9 @@ class Reportwriter:
                 # Set cell color fill type to solid
                 risk_cell.fill.solid()
                 # Color the risk cell based on corresponding severity color
-                cell_color = pptx.dml.color.RGBColor(*map(lambda v: int(v, 16), finding["severity_color_hex"]))
+                cell_color = pptx.dml.color.RGBColor(
+                    *map(lambda v: int(v, 16), finding["severity_color_hex"])
+                )
                 risk_cell.fill.fore_color.rgb = cell_color
                 row_iter += 1
             # Set all cells alignment to center and vertical center
@@ -2350,7 +2564,9 @@ class Reportwriter:
 
         # Create slide for each finding
         for finding in self.report_json["findings"]:
-            slide_layout = self.ppt_presentation.slide_layouts[SLD_LAYOUT_TITLE_AND_CONTENT]
+            slide_layout = self.ppt_presentation.slide_layouts[
+                SLD_LAYOUT_TITLE_AND_CONTENT
+            ]
             self.finding_slide = self.ppt_presentation.slides.add_slide(slide_layout)
             shapes = self.finding_slide.shapes
             title_shape = shapes.title
@@ -2478,7 +2694,12 @@ class Reportwriter:
         ppt_doc = self.generate_powerpoint_pptx()
         ppt_doc.save(ppt_stream)
         # Return each memory object
-        return json.dumps(self.report_json, indent=4), word_stream, excel_stream, ppt_stream
+        return (
+            json.dumps(self.report_json, indent=4),
+            word_stream,
+            excel_stream,
+            ppt_stream,
+        )
 
 
 class TemplateLinter:
@@ -2502,11 +2723,17 @@ class TemplateLinter:
                     template_document = DocxTemplate(self.template_loc)
                     logger.info("Template loaded for linting")
 
-                    undefined_vars = template_document.get_undeclared_template_variables(self.jinja_template_env)
+                    undefined_vars = (
+                        template_document.get_undeclared_template_variables(
+                            self.jinja_template_env
+                        )
+                    )
                     if undefined_vars:
                         for variable in undefined_vars:
                             if variable not in LINTER_CONTEXT:
-                                results["warnings"].append(f"Potential undefined variable: {variable}")
+                                results["warnings"].append(
+                                    f"Potential undefined variable: {variable}"
+                                )
 
                     # Step 2: Check document's styles
                     document_styles = template_document.styles
@@ -2551,15 +2778,22 @@ class TemplateLinter:
 
                     # Step 3: Test rendering the document
                     try:
-                        template_document.render(LINTER_CONTEXT, self.jinja_template_env, autoescape=True)
+                        template_document.render(
+                            LINTER_CONTEXT, self.jinja_template_env, autoescape=True
+                        )
                         logger.info("Completed document rendering test")
                     except TemplateSyntaxError as error:
                         logger.exception("Template syntax error: %s", error)
                         results = {
                             "result": "failed",
-                            "errors": [f"Jinja2 template syntax error: {error.message}"],
+                            "errors": [
+                                f"Jinja2 template syntax error: {error.message}"
+                            ],
                         }
-                        if error.message == "expected token 'end of print statement', got 'such'":
+                        if (
+                            error.message
+                            == "expected token 'end of print statement', got 'such'"
+                        ):
                             results["errors"].append(
                                 "The above error means you may have a typo in a variable name or expression"
                             )
@@ -2567,7 +2801,9 @@ class TemplateLinter:
                         logger.error("Template syntax error: %s", error)
                         results = {
                             "result": "failed",
-                            "errors": [f"Jinja2 template syntax error: {error.message}"],
+                            "errors": [
+                                f"Jinja2 template syntax error: {error.message}"
+                            ],
                         }
                     except InvalidFilterValue as error:
                         logger.error("Invalid value provided to filter: %s", error)
@@ -2576,10 +2812,14 @@ class TemplateLinter:
                             "errors": [f"Invalid filter value: {error.message}"],
                         }
                     except TypeError as error:
-                        logger.error("Invalid value provided to filter or expression: %s", error)
+                        logger.error(
+                            "Invalid value provided to filter or expression: %s", error
+                        )
                         results = {
                             "result": "failed",
-                            "errors": [f"Invalid value provided to filter or expression: {error}"],
+                            "errors": [
+                                f"Invalid value provided to filter or expression: {error}"
+                            ],
                         }
                     except TemplateRuntimeError as error:
                         logger.error("Invalid filter or expression: %s", error)
@@ -2634,10 +2874,14 @@ class TemplateLinter:
                         "errors": ["Template file is not a PowerPoint presentation"],
                     }
                 except TypeError as error:
-                    logger.error("Invalid value provided to filter or expression: %s", error)
+                    logger.error(
+                        "Invalid value provided to filter or expression: %s", error
+                    )
                     results = {
                         "result": "failed",
-                        "errors": [f"Invalid value provided to filter or expression: {error}"],
+                        "errors": [
+                            f"Invalid value provided to filter or expression: {error}"
+                        ],
                     }
                 except TemplateRuntimeError as error:
                     logger.error("Invalid filter or expression: %s", error)
