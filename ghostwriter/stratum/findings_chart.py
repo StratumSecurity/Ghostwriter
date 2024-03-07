@@ -14,19 +14,19 @@ def format_chart_data(findings):
 
 
 def build_bar_chart(findings):
-    # findings format is in the JSON as [{"category":"Injection", "total": 3}]
+    # findings format is in the report JSON as {"Injection": 3, "Security Misconfiguration": 2}
     if not findings:
         return None
 
     fig, ax = plt.subplots()
-    # Sort findings by totals
-    findings.sort(key=lambda x: x["total"], reverse=True)
+    # Sort findings by totals where max items are first
+    sorted_dict = dict(sorted(findings.items(), key=lambda x: x[1], reverse=True))
 
     labels = []
     counts = []
-    for f in findings:
-        labels.append(f["category"])
-        counts.append(f["total"])
+    for category, total in sorted_dict.items():
+        labels.append(category)
+        counts.append(total)
 
     # Horizontal Bar Plot
     ax.barh(labels, counts, height=0.3)
