@@ -1117,14 +1117,14 @@ class Reportwriter:
                         fig = build_bar_chart(self.report_json["totals"][label])
                         # Only add image if we have data, None is returned when we don't have any findings
                         if fig:
-                            # Subtracting - 3.5 from the width to make it fit perfectly on the page with the font sizes
-                            # to prevent overlapping on the x-axis and make it more readable
+                            # Subtracting from the width and the height to make it fit
+                            # perfectly on the page without the font looking squished together
                             self._add_image(
                                 par,
                                 fig,
                                 keyword,
-                                image_width=fig.get_figwidth() - 3.5,
-                                image_height=fig.get_figheight(),
+                                image_width=fig.get_figwidth() - 3,
+                                image_height=fig.get_figheight() - 0.8,
                             )
 
                     if keyword == "chart_bar":

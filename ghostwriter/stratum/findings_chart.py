@@ -40,7 +40,7 @@ def build_bar_chart(findings):
     ax.yaxis.set_ticks_position("none")
 
     # Add padding between axes and labels and set the font size
-    label_size = 9
+    label_size = 11
     ax.xaxis.set_tick_params(pad=5, labelsize=label_size)
     ax.yaxis.set_tick_params(pad=10, labelsize=label_size)
 
@@ -71,4 +71,5 @@ def build_bar_chart(findings):
     # Shrink figure to be close to current size in Word template
     # Current literals set make the figure fit on the page correctly
     fig.set_size_inches(10, 2.9)
+    fig.set_dpi(200)
     return fig
