@@ -156,28 +156,28 @@ class Finding(models.Model):
         blank=True,
     )
     mitigation = models.TextField(
-        "Mitigation",
+        "Recommendation",
         null=True,
         blank=True,
         help_text="Describe how this finding can be resolved or addressed",
     )
     replication_steps = models.TextField(
-        "Replication Steps",
+        "Category",
         null=True,
         blank=True,
-        help_text="Provide an explanation for how the reader may reproduce this finding",
+        help_text="Provide a finding category that fits: Authentication, Authorization, Availability, Configuration Management, Encryption, Information Disclosure, Input Validation, Patch Management, or Session Management",
     )
     host_detection_techniques = models.TextField(
-        "Host Detection Techniques",
+        "Difficulty of Exploit",
         null=True,
         blank=True,
-        help_text="Describe how this finding can be detected on an endpoint - leave blank if this does not apply",
+        help_text="Assign the difficulty of exploitation that fits: LOW, MEDIUM, HIGH",
     )
     network_detection_techniques = models.TextField(
-        "Network Detection Techniques",
+        "Status of Finding",
         null=True,
         blank=True,
-        help_text="Describe how this finding can be detected on a network - leave blank if this does not apply",
+        help_text="Assign a status of OPEN, ACCEPTED, or CLOSED to the finding",
     )
     references = models.TextField(
         "References",
@@ -429,10 +429,10 @@ class ReportFindingLink(models.Model):
         validators=[MinValueValidator(1)],
     )
     affected_entities = models.TextField(
-        "Affected Entities",
+        "Details",
         null=True,
         blank=True,
-        help_text="Provide a list of the affected entities (e.g. domains, hostnames, IP addresses)",
+        help_text="Provide details of the finding and how to reproduce",
     )
     description = models.TextField(
         "Description",
@@ -447,28 +447,28 @@ class ReportFindingLink(models.Model):
         help_text="Describe the impact of this finding on the affected entities",
     )
     mitigation = models.TextField(
-        "Mitigation",
+        "Recommendation",
         null=True,
         blank=True,
         help_text="Describe how this finding can be resolved or addressed",
     )
     replication_steps = models.TextField(
-        "Replication Steps",
+        "Category",
         null=True,
         blank=True,
-        help_text="Provide an explanation for how the reader may reproduce this finding",
+        help_text="Provide a finding category that fits: Authentication, Authorization, Availability, Configuration Management, Encryption, Information Disclosure, Input Validation, Patch Management, or Session Management",
     )
     host_detection_techniques = models.TextField(
-        "Host Detection Techniques",
+        "Difficulty of Exploit",
         null=True,
         blank=True,
-        help_text="Describe how this finding can be detected on an endpoint - leave blank if this does not apply",
+        help_text="Assign the difficulty of exploitation that fits: LOW, MEDIUM, HIGH",
     )
     network_detection_techniques = models.TextField(
-        "Network Detection Techniques",
+        "Status of Finding",
         null=True,
         blank=True,
-        help_text="Describe how this finding can be detected on a network - leave blank if this does not apply",
+        help_text="Assign a status of OPEN, ACCEPTED, or CLOSED to the finding",
     )
     references = models.TextField(
         "References",

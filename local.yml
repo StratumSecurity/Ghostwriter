@@ -3,6 +3,8 @@ version: "3"
 volumes:
   local_postgres_data: {}
   local_postgres_data_backups: {}
+  local_staticfiles: {}
+  local_data: {}
 
 services:
   django: &django
@@ -14,6 +16,11 @@ services:
       - postgres
     volumes:
       - .:/app
+      - /opt/ssl:/ssl
+      - local_staticfiles:/app/staticfiles
+      - local_data:/app/ghostwriter/media
+      # install on docker host via: sudo apt install ttf-mscorefonts-installer -y
+      #- /usr/share/fonts/truetype/msttcorefonts/:/usr/share/fonts/truetype/msttcorefonts/
     labels:
       name: ghostwriter_django
     environment:
@@ -48,6 +55,18 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - REDIS_URL=redis://${REDIS_HOST}:${REDIS_PORT}/0
       - WEB_CONCURRENCY=${DJANGO_WEB_CONCURRENCY}
+      - SD_APPSEC_MEAN=${SD_APPSEC_MEAN}
+      - SD_APPSEC_STD=${SD_APPSEC_STD}
+      - SD_WIRELESS_MEAN=${SD_WIRELESS_MEAN}
+      - SD_WIRELESS_STD=${SD_WIRELESS_STD}
+      - SD_NETSEC_IPT_MEAN=${SD_NETSEC_IPT_MEAN}
+      - SD_NETSEC_IPT_STD=${SD_NETSEC_IPT_STD}
+      - SD_NETSEC_EPT_MEAN=${SD_NETSEC_EPT_MEAN}
+      - SD_NETSEC_EPT_STD=${SD_NETSEC_EPT_STD}
+      - SD_CLOUD_MEAN=${SD_CLOUD_MEAN}
+      - SD_CLOUD_STD=${SD_CLOUD_STD}
+      - SD_PHYSICAL_MEAN=${SD_PHYSICAL_MEAN}
+      - SD_PHYSICAL_STD=${SD_PHYSICAL_STD}
     healthcheck:
       test: curl --insecure --fail http://django:8000/status/simple/ || exit 1
       interval: ${HEALTHCHECK_INTERVAL}
