@@ -1,4 +1,4 @@
-from enums import Grade
+from .enums import Grade
 
 
 def _get_grade(score):
