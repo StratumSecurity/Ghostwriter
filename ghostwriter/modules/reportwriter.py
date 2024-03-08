@@ -57,8 +57,7 @@ from ghostwriter.stratum.enums import (
     Severity,
     get_value_from_key,
 )
-from ghostwriter.stratum.findings_chart import build_bar_chart
-from ghostwriter.stratum.grade_graph import build_grade_graph, plt
+from ghostwriter.stratum.findings_chart import build_bar_chart, plt
 
 # Using __name__ resolves to ghostwriter.modules.reporting
 logger = logging.getLogger(__name__)
