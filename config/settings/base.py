@@ -1,6 +1,7 @@
 """
 Base settings to build other settings files upon.
 """
+
 # Standard Libraries
 from datetime import timedelta
 from pathlib import Path
@@ -20,8 +21,7 @@ APPS_DIR = ROOT_DIR / "ghostwriter"
 
 env = environ.Env()
 
-# Modified the defaults to read env file with custom environment variables
-READ_DOT_ENV_FILE = env.bool("DJANGO_READ_DOT_ENV_FILE", default=True)
+READ_DOT_ENV_FILE = env.bool("DJANGO_READ_DOT_ENV_FILE", default=False)
 if READ_DOT_ENV_FILE:
     # OS environment variables take precedence over variables from .env
     env.read_env(f"{ROOT_DIR}/.env")
@@ -506,18 +506,3 @@ REDIS_URL = env("REDIS_URL", default="redis://redis:6379")
 # Tagging
 # ------------------------------------------------------------------------------
 TAGGIT_CASE_INSENSITIVE = True
-
-# SD Score Means and Standard Deviations (Deploy will fail if this isn't set)
-# ------------------------------------------------------------------------------
-SD_APPSEC_MEAN = float(env("SD_APPSEC_MEAN"))
-SD_APPSEC_STD = float(env("SD_APPSEC_STD"))
-SD_WIRELESS_MEAN = float(env("SD_WIRELESS_MEAN"))
-SD_WIRELESS_STD = float(env("SD_WIRELESS_STD"))
-SD_NETSEC_IPT_MEAN = float(env("SD_NETSEC_IPT_MEAN"))
-SD_NETSEC_IPT_STD = float(env("SD_NETSEC_IPT_STD"))
-SD_NETSEC_EPT_MEAN = float(env("SD_NETSEC_EPT_MEAN"))
-SD_NETSEC_EPT_STD = float(env("SD_NETSEC_EPT_STD"))
-SD_CLOUD_MEAN = float(env("SD_CLOUD_MEAN"))
-SD_CLOUD_STD = float(env("SD_CLOUD_STD"))
-SD_PHYSICAL_MEAN = float(env("SD_PHYSICAL_MEAN"))
-SD_PHYSICAL_STD = float(env("SD_PHYSICAL_STD"))

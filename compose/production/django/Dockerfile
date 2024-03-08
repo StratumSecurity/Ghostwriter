@@ -14,8 +14,6 @@ RUN apk --no-cache add build-base curl \
     && apk --no-cache add libffi-dev py-cffi \
     # XLSX dependencies
     && apk --no-cache add libxml2-dev libxslt-dev \
-    # Dependencies for scipy for custom code
-    && apk --no-cache add gfortran openblas-dev \
     # Pull down custom fonts from S3 bucket
     && mkdir -p /usr/local/share/fonts \
     && curl -O https://stratum-ghostwriter.s3.amazonaws.com/Aptos.ttf --output-dir /usr/local/share/fonts \

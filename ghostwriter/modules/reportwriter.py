@@ -53,11 +53,12 @@ from ghostwriter.reporting.models import Evidence
 # Custom code
 from ghostwriter.stratum.enums import (
     FindingStatusColor,
+    Service,
     Severity,
     get_value_from_key,
 )
 from ghostwriter.stratum.findings_chart import build_bar_chart
-from ghostwriter.stratum.sd_graph import build_sd_graph, plt
+from ghostwriter.stratum.grade_graph import build_grade_graph, plt
 
 # Using __name__ resolves to ghostwriter.modules.reporting
 logger = logging.getLogger(__name__)
@@ -1073,6 +1074,17 @@ class Reportwriter:
                 self.report_json["project"]["type"].lower(),
             )
 
+        # Grades for each service
+        # Had to register new tags for grade support
+        for label in ["report", "average"]:
+            for service in [member.value for member in Service]:
+                service_label = f"{label}_grade_{service}"
+                if "{{." + service_label + "}}" in text:
+                    text = text.replace(
+                        "{{." + service_label + "}}",
+                        self.report_json["totals"][service_label].lower(),
+                    )
+
         # Use regex to search for expressions to process
         keyword_regex = r"\{\{\.(.*?)\}\}"
         # Find all strings like ``{{. foo}}``
@@ -1137,40 +1149,6 @@ class Reportwriter:
 
                     if keyword == "chart_bar_internal":
                         _build_bar_chart(self, par, keyword, "chart_data_internal")
-                        return par
-
-                    # SD Graphs
-                    def _build_sd_graph(self, par, keyword, label):
-                        par.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                        fig = build_sd_graph(self.report_json["totals"][label])
-                        self._add_image(
-                            par, fig, keyword, image_height=fig.get_figheight()
-                        )
-
-                    # Unfortunately had to register new tags until GW has a proper way to build charts
-                    # into reports
-                    if keyword == "chart_sdscore_appsec":
-                        _build_sd_graph(self, par, keyword, "sd_score_appsec")
-                        return par
-
-                    if keyword == "chart_sdscore_cloud":
-                        _build_sd_graph(self, par, keyword, "sd_score_cloud")
-                        return par
-
-                    if keyword == "chart_sdscore_external":
-                        _build_sd_graph(self, par, keyword, "sd_score_external")
-                        return par
-
-                    if keyword == "chart_sdscore_internal":
-                        _build_sd_graph(self, par, keyword, "sd_score_internal")
-                        return par
-
-                    if keyword == "chart_sdscore_physical":
-                        _build_sd_graph(self, par, keyword, "sd_score_physical")
-                        return par
-
-                    if keyword == "chart_sdscore_wireless":
-                        _build_sd_graph(self, par, keyword, "sd_score_wireless")
                         return par
 
                     # Handle evidence files
@@ -1902,40 +1880,6 @@ class Reportwriter:
         context["project"]["chart_bar_internal"] = "<p>{{.chart_bar_internal}}</p>"
         context["project"]["chart_bar_internal_rt"] = render_subdocument(
             context["project"]["chart_bar_internal"], finding=None
-        )
-
-        # SD Graphs
-        context["project"]["chart_sdscore_appsec"] = "<p>{{.chart_sdscore_appsec}}</p>"
-        context["project"]["chart_sdscore_appsec_rt"] = render_subdocument(
-            context["project"]["chart_sdscore_appsec"], finding=None
-        )
-        context["project"]["chart_sdscore_cloud"] = "<p>{{.chart_sdscore_cloud}}</p>"
-        context["project"]["chart_sdscore_cloud_rt"] = render_subdocument(
-            context["project"]["chart_sdscore_cloud"], finding=None
-        )
-        context["project"][
-            "chart_sdscore_wireless"
-        ] = "<p>{{.chart_sdscore_wireless}}</p>"
-        context["project"]["chart_sdscore_wireless_rt"] = render_subdocument(
-            context["project"]["chart_sdscore_wireless"], finding=None
-        )
-        context["project"][
-            "chart_sdscore_external"
-        ] = "<p>{{.chart_sdscore_external}}</p>"
-        context["project"]["chart_sdscore_external_rt"] = render_subdocument(
-            context["project"]["chart_sdscore_external"], finding=None
-        )
-        context["project"][
-            "chart_sdscore_internal"
-        ] = "<p>{{.chart_sdscore_internal}}</p>"
-        context["project"]["chart_sdscore_internal_rt"] = render_subdocument(
-            context["project"]["chart_sdscore_internal"], finding=None
-        )
-        context["project"][
-            "chart_sdscore_physical"
-        ] = "<p>{{.chart_sdscore_physical}}</p>"
-        context["project"]["chart_sdscore_physical_rt"] = render_subdocument(
-            context["project"]["chart_sdscore_physical"], finding=None
         )
 
         # Assignments

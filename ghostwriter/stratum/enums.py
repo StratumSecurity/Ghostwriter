@@ -16,6 +16,30 @@ class FindingStatusColor(Enum):
     ACCEPTED = ("ACCEPTED", "#4E81BD")
 
 
+class Service(Enum):
+    APPSEC = "appsec"
+    CLOUD = "cloud"
+    EXTERNAL = "external"
+    INTERNAL = "internal"
+    PHYSICAL = "physical"
+    WIRELESS = "wireless"
+
+
+class Grade(Enum):
+    A = 90
+    B = 80
+    C = 70
+    D = 60
+    F = 0
+
+    @classmethod
+    def get_value(cls, grade_str):
+        try:
+            return cls[grade_str].value
+        except KeyError:
+            return None
+
+
 def get_value_from_key(e, key):
     for item in e:
         if item.value[0].lower() == key.lower():

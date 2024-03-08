@@ -52,8 +52,9 @@ from ghostwriter.shepherd.models import (
     StaticServer,
     TransientServer,
 )
-from ghostwriter.stratum.enums import Severity
+from ghostwriter.stratum.enums import Service, Severity
 from ghostwriter.stratum.findings_chart import format_chart_data
+from ghostwriter.stratum.grade_graph import calculate_grade
 from ghostwriter.users.models import User
 
 
@@ -880,20 +881,6 @@ class ReportDataSerializer(CustomModelSerializer):
         rep["totals"]["team"] = total_team
         rep["totals"]["targets"] = total_targets
 
-        def _get_total(
-            crit_findings, high_findings, med_findings, low_findings, info_findings
-        ):
-            return (
-                crit_findings * 25
-                + high_findings * 10
-                + med_findings * 5
-                + low_findings * 3
-                + info_findings * 1
-            )
-
-        def _get_score(total, mean, std):
-            return (mean - total) / std
-
         def _get_findings_by_type(findings, type):
             return list(
                 filter(
@@ -901,120 +888,13 @@ class ReportDataSerializer(CustomModelSerializer):
                 )
             )
 
-        def _get_findings_by_severity(findings, severity):
-            return list(
-                filter(lambda f: f["severity"].lower() == severity.lower(), findings)
-            )
-
-        # Calculate SD Score - in statistics this is called Z-Score
-        # This one is the total for all findings in the report
-        # Netsec needs separate totals for internal and external in the combo reports
-        findings_score_total = _get_total(
-            critical_findings,
-            high_findings,
-            medium_findings,
-            low_findings,
-            info_findings,
-        )
-
         netsec_internal = "internal"
         netsec_external = "external"
 
         netsec_internal_findings = _get_findings_by_type(findings, netsec_internal)
         netsec_external_findings = _get_findings_by_type(findings, netsec_external)
 
-        netsec_internal_total = _get_total(
-            len(
-                _get_findings_by_severity(netsec_internal_findings, Severity.CRIT.value)
-            ),
-            len(
-                _get_findings_by_severity(netsec_internal_findings, Severity.HIGH.value)
-            ),
-            len(
-                _get_findings_by_severity(netsec_internal_findings, Severity.MED.value)
-            ),
-            len(
-                _get_findings_by_severity(netsec_internal_findings, Severity.LOW.value)
-            ),
-            len(
-                _get_findings_by_severity(netsec_internal_findings, Severity.INFO.value)
-            ),
-        )
-        netsec_external_total = _get_total(
-            len(
-                _get_findings_by_severity(netsec_external_findings, Severity.CRIT.value)
-            ),
-            len(
-                _get_findings_by_severity(netsec_external_findings, Severity.HIGH.value)
-            ),
-            len(
-                _get_findings_by_severity(netsec_external_findings, Severity.MED.value)
-            ),
-            len(
-                _get_findings_by_severity(netsec_external_findings, Severity.LOW.value)
-            ),
-            len(
-                _get_findings_by_severity(netsec_external_findings, Severity.INFO.value)
-            ),
-        )
-
-        # Service label, total, mean, and standard deviation
-        # The hardcoded literals need to be updated once in a while to update the rolling average
-        # Mean and STDs should be based off the past three years as the security landscape changes
-        score_type_data = [
-            (
-                "appsec",
-                findings_score_total,
-                settings.SD_APPSEC_MEAN,
-                settings.SD_APPSEC_STD,
-            ),
-            (
-                "wireless",
-                findings_score_total,
-                settings.SD_WIRELESS_MEAN,
-                settings.SD_WIRELESS_STD,
-            ),
-            (
-                netsec_internal,
-                netsec_internal_total,
-                settings.SD_NETSEC_IPT_MEAN,
-                settings.SD_NETSEC_IPT_STD,
-            ),
-            (
-                netsec_external,
-                netsec_external_total,
-                settings.SD_NETSEC_EPT_MEAN,
-                settings.SD_NETSEC_EPT_STD,
-            ),
-            (
-                "cloud",
-                findings_score_total,
-                settings.SD_CLOUD_MEAN,
-                settings.SD_CLOUD_STD,
-            ),
-            (
-                "physical",
-                findings_score_total,
-                settings.SD_PHYSICAL_MEAN,
-                settings.SD_PHYSICAL_STD,
-            ),
-        ]
-        for d in score_type_data:
-            mean = d[2]
-            std = d[3]
-            best_score = _get_score(0, mean, std)
-            score = _get_score(d[1], mean, std)
-
-            # Convert the score to a percentage based on the range of the SD graph max value (3 STD)
-            # Negatives we are graphing as a score whereas positive as a percentage
-            # since we don't know the worst score but do know the best score
-            lower_bound = -3.0
-            if score > 0:
-                score = score / best_score * abs(lower_bound)
-            elif score < lower_bound:
-                score = lower_bound
-            rep["totals"]["sd_score_" + d[0]] = score
-
+        # Bar chart data for tags
         rep["totals"]["chart_data"] = format_chart_data(findings)
 
         # Check if there are any netsec findings, GW will hit this on report generation
@@ -1026,4 +906,18 @@ class ReportDataSerializer(CustomModelSerializer):
         rep["totals"]["chart_data_external"] = format_chart_data(
             netsec_external_findings if netsec_external_findings else findings
         )
+
+        # TODO Come back and add calls for calculating the grades for the current report and past reports
+        # for the services
+        # Have to grab the service from somewhere (cloud, external, internal, appsec)
+        # Look at lint utils for field names under totals
+        # Calculate the current grades for each service really only current report findings,
+        # and external/internal separately for combo report
+        grade = calculate_grade(
+            critical_findings, high_findings, medium_findings, low_findings
+        )
+        # TODO For now just put grade in for every service to check if other code works first
+        for service in [member.value for member in Service]:
+            rep["totals"][f"report_grade_{service}"] = grade
+
         return rep
