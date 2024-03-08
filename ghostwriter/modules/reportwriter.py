@@ -341,10 +341,18 @@ def regex_search(text, regex):
 
 
 # Define a function to create the custom Jinja tag for the grade cell color
-def cellbg(color):
+def get_color_by_grade(grade):
     # Tried https://docxtpl.readthedocs.io/en/latest/#cell-color but can only
     # be called once even with if conditions
-    return jinja2.Markup('<w:shd w:fill="#{}"/>'.format(color))
+    # https://github.com/elapouya/python-docx-template/issues/373
+    color_map = {
+        "A": "12a64d",
+        "B": "0070C0",
+        "C": "FFC000",
+        "D": "FF0000",
+        "F": "C00000",
+    }
+    return color_map[grade]
 
 
 def prepare_jinja2_env(debug=False):
@@ -367,7 +375,7 @@ def prepare_jinja2_env(debug=False):
     env.filters["get_item"] = get_item
     env.filters["regex_search"] = regex_search
     env.filters["filter_tags"] = filter_tags
-    env.globals["cellbg"] = cellbg
+    env.filters["color_by_grade"] = get_color_by_grade
 
     return env
 
