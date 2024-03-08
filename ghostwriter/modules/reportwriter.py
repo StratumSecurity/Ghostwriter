@@ -345,6 +345,8 @@ def get_color_by_grade(grade):
     # Tried https://docxtpl.readthedocs.io/en/latest/#cell-color but can only
     # be called once even with if conditions
     # https://github.com/elapouya/python-docx-template/issues/373
+    # Has to be {% cellbg ( totals.report_grade_appsec | color_by_grade) %}
+    # cellbg doesn't like Jinja defined variables as the value such as cellbg jinja_var
     color_map = {
         "A": "12a64d",
         "B": "0070C0",
