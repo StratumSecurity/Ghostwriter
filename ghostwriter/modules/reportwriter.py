@@ -823,7 +823,7 @@ class Reportwriter:
 
                     # Add space point before the image to not overlap onto the table header
                     f = par.paragraph_format
-                    f.space_before = Pt(2)
+                    f.space_before = Pt(6)
 
                     try:
                         # Add the picture to the document and then add a border
@@ -1403,7 +1403,7 @@ class Reportwriter:
         return par
 
     def _create_list_paragraph(
-        self, prev_p, level, num=False, alignment=WD_ALIGN_PARAGRAPH.JUSTIFY
+        self, prev_p, level, num=False, alignment=WD_ALIGN_PARAGRAPH.LEFT
     ):
         """
         Create a new paragraph in the document for a list.
@@ -1689,7 +1689,7 @@ class Reportwriter:
                                             code_line
                                         )
                                         p.style = "CodeBlock"
-                                        p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+                                        p.alignment = WD_ALIGN_PARAGRAPH.LEFT
 
                 # OL & UL – Ordered/Numbered & Unordered Lists
                 elif tag_name in ("ol", "ul"):
@@ -1793,7 +1793,7 @@ class Reportwriter:
             block_font.italic = True
             # Set alignment
             block_par = block_style.paragraph_format
-            block_par.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+            block_par.alignment = WD_ALIGN_PARAGRAPH.LEFT
             block_par.left_indent = Inches(0.2)
             block_par.right_indent = Inches(0.2)
             # Keep first and last lines together after repagination
