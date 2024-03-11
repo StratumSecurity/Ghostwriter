@@ -54,7 +54,11 @@ from ghostwriter.shepherd.models import (
 )
 from ghostwriter.stratum.enums import Service, Severity
 from ghostwriter.stratum.findings_chart import format_chart_data
-from ghostwriter.stratum.grade_graph import calculate_grade, calculate_grade_by_findings
+from ghostwriter.stratum.grade_graph import (
+    calculate_grade,
+    calculate_grade_by_findings,
+    calculate_average_grade,
+)
 from ghostwriter.users.models import User
 
 
@@ -851,6 +855,11 @@ class ReportDataSerializer(CustomModelSerializer):
         low_findings = 0
         info_findings = 0
 
+        date_format = "%d %b %Y"
+        project_start_date = datetime.strptime(
+            rep["project"]["start_date"], date_format
+        )
+
         for finding in findings:
             finding["ordering"] = finding_order
             severity = finding["severity"].lower()
@@ -908,11 +917,8 @@ class ReportDataSerializer(CustomModelSerializer):
             netsec_external_findings if netsec_external_findings else findings
         )
 
-        # TODO Come back and add calls for calculating the grades for the current report and past reports
-        # for the services
-        # Have to grab the service from somewhere (cloud, external, internal, appsec)
         # Look at lint utils for field names under totals
-        # Calculate the current grades for each service really only current report findings,
+        # Calculate the current grades for each service; only current report findings,
         # and external/internal separately for combo report
         grade = calculate_grade(
             critical_findings, high_findings, medium_findings, low_findings
@@ -923,14 +929,30 @@ class ReportDataSerializer(CustomModelSerializer):
             # The below is needed for the netsec combo reports
             if netsec_external_findings:
                 # Calculate the grade for netsec external findings
-                rep["totals"][f"report_grade_{Service.EXTERNAL.value}"] = (
-                    calculate_grade_by_findings(netsec_external_findings)
+                s = Service.EXTERNAL.value.lower()
+                rep["totals"][f"report_grade_{s}"] = calculate_grade_by_findings(
+                    netsec_external_findings
+                )
+                rep["totals"][f"average_grade_{s}"] = calculate_average_grade(
+                    s, project_start_date
                 )
 
             if netsec_internal_findings:
                 # Calculate the grade for netsec internal findings
-                rep["totals"][f"report_grade_{Service.INTERNAL.value}"] = (
-                    calculate_grade_by_findings(netsec_internal_findings)
+                s = Service.INTERNAL.value.lower()
+                rep["totals"][f"report_grade_{s}"] = calculate_grade_by_findings(
+                    netsec_internal_findings
+                )
+                rep["totals"][f"average_grade_{s}"] = calculate_average_grade(
+                    s, project_start_date
+                )
+
+            if not netsec_external_findings and not netsec_internal_findings:
+                # Calculate the average for any other service
+                # We do this here because we want to make sure we don't do a
+                # second database hit unless it's a combo report
+                rep["totals"][f"average_grade_{service}"] = calculate_average_grade(
+                    service, project_start_date
                 )
 
         return rep

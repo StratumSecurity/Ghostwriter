@@ -24,6 +24,16 @@ class Service(Enum):
     PHYSICAL = "physical"
     WIRELESS = "wireless"
 
+    @classmethod
+    def get_finding_type(cls, service):
+        try:
+            if cls.APPSEC.value == service:
+                return ["Web", "Mobile", "Code Review"]
+            else:
+                return [cls[service].value.title()]
+        except KeyError:
+            return None
+
 
 class Grade(Enum):
     A = 90
