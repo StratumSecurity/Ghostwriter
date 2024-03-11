@@ -71,8 +71,8 @@ def calculate_average_grade(service, project_start_date):
     findings = (
         ReportFindingLink.objects.filter(report__delivered__exact=True)
         .filter(
-            report__creation__gte=one_year_ago.date(),
-            report__creation__lt=project_start_date.date(),
+            report__project__start_date__gte=one_year_ago.date(),
+            report__project__start_date__lt=project_start_date.date(),
         )
         .filter(finding_type__finding_type__in=finding_types)
         .values("severity__severity", "report__id")
