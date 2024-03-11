@@ -30,7 +30,8 @@ class Service(Enum):
             if cls.APPSEC.value == service:
                 return ["Web", "Mobile", "Code Review"]
             else:
-                return [cls[service].value.title()]
+                # upper() is needed for the key to be found
+                return [cls[service.upper()].value.title()]
         except KeyError:
             return None
 
