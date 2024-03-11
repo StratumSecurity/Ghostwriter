@@ -53,6 +53,7 @@ from ghostwriter.reporting.models import Evidence
 # Custom code
 from ghostwriter.stratum.enums import (
     FindingStatusColor,
+    Grade,
     Service,
     Severity,
     get_value_from_key,
@@ -357,6 +358,22 @@ def get_color_by_grade(grade):
     return color_map[grade]
 
 
+def get_grade_comparison(grade, class_average_grade):
+    # We have to convert the average grade back to a number so the comparison
+    # between the current test and the average can be done properly
+    # as the letters of both will equal the same when they match B==B in numeric 80==80
+    my_grade = Grade.get_value(grade)
+    average_grade = Grade.get_value(class_average_grade)
+
+    if my_grade > average_grade:
+        compare_label = "an above average"
+    elif my_grade < average_grade:
+        compare_label = "a below average"
+    else:
+        compare_label = "an average"
+    return compare_label
+
+
 def prepare_jinja2_env(debug=False):
     """Prepare a Jinja2 environment with all custom filters."""
     if debug:
@@ -378,6 +395,7 @@ def prepare_jinja2_env(debug=False):
     env.filters["regex_search"] = regex_search
     env.filters["filter_tags"] = filter_tags
     env.filters["color_by_grade"] = get_color_by_grade
+    env.filters["compare_grade"] = get_grade_comparison
 
     return env
 
