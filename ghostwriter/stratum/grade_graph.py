@@ -25,10 +25,10 @@ def calculate_grade_by_findings(findings):
         for key, group in groupby(findings, key=lambda f: f["severity"])
     }
     return calculate_grade(
-        grouped_data[Severity.CRIT.value.lower()],
-        grouped_data[Severity.HIGH.value.lower()],
-        grouped_data[Severity.MED.value.lower()],
-        grouped_data[Severity.LOW.value.lower()],
+        grouped_data.get(Severity.CRIT.value.lower(), 0),
+        grouped_data.get(Severity.HIGH.value.lower(), 0),
+        grouped_data.get(Severity.MED.value.lower(), 0),
+        grouped_data.get(Severity.LOW.value.lower(), 0),
     )
 
 
