@@ -19,12 +19,12 @@ def _get_grade(score):
     return grade
 
 
-def _group_findings_by_severity(findings):
-    findings.sort(key=lambda f: f["severity"])
+def _group_findings_by_severity(findings, field="severity"):
+    findings.sort(key=lambda f: f[field])
     # Group the data based on the key
     return {
         key.lower(): len(list(group))
-        for key, group in groupby(findings, key=lambda f: f["severity"])
+        for key, group in groupby(findings, key=lambda f: f[field])
     }
 
 
@@ -46,9 +46,9 @@ def _calculate_numeric_grade(critical, high, medium, low):
     return max(health, 5)
 
 
-def _calculate_grade(findings, func):
+def _calculate_grade(findings, func, field):
     # Group the data based on the key
-    grouped_data = _group_findings_by_severity(findings)
+    grouped_data = _group_findings_by_severity(findings, field)
     return func(
         grouped_data.get(Severity.CRIT.value.lower(), 0),
         grouped_data.get(Severity.HIGH.value.lower(), 0),
@@ -69,25 +69,34 @@ def calculate_average_grade(service, project_start_date):
     finding_types = Service.get_finding_type(service)
 
     findings = (
-        ReportFindingLink.objects.values("severity", "report__id")
-        .filter(report__delivered__exact=True)
+        ReportFindingLink.objects.filter(report__delivered__exact=True)
         .filter(
             report__creation__gte=one_year_ago.date(),
             report__creation__lt=project_start_date.date(),
         )
         .filter(finding_type__finding_type__in=finding_types)
+        .values("severity__severity", "report__id")
         .order_by("report__id", "severity__weight")
     )
+
+    # If no reports, we have no data as it's new service then return "A"
+    if not findings:
+        return Grade.A.value
 
     # Group the found findings by report and calculate the score for each report
     reports = {
         key: list(group)
         for key, group in groupby(findings, key=lambda f: f["report__id"])
     }
+
     # Calculate the numeric grades for each report to calculate the "Stratum Customer Average" grade
     grades = list(
         map(
-            lambda r: _calculate_grade(r.value, _calculate_numeric_grade), reports.items
+            # Had to pass "severity__severity" as severity was used for foreign key field
+            lambda r: _calculate_grade(
+                r[1], _calculate_numeric_grade, "severity__severity"
+            ),
+            reports.items(),
         )
     )
     average = round(sum(grades) / len(grades))
