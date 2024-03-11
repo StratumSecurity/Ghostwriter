@@ -54,7 +54,7 @@ from ghostwriter.shepherd.models import (
 )
 from ghostwriter.stratum.enums import Service, Severity
 from ghostwriter.stratum.findings_chart import format_chart_data
-from ghostwriter.stratum.grade_graph import calculate_grade
+from ghostwriter.stratum.grade_graph import calculate_grade, calculate_grade_by_findings
 from ghostwriter.users.models import User
 
 
@@ -888,11 +888,12 @@ class ReportDataSerializer(CustomModelSerializer):
                 )
             )
 
-        netsec_internal = "internal"
-        netsec_external = "external"
-
-        netsec_internal_findings = _get_findings_by_type(findings, netsec_internal)
-        netsec_external_findings = _get_findings_by_type(findings, netsec_external)
+        netsec_internal_findings = _get_findings_by_type(
+            findings, Service.INTERNAL.value
+        )
+        netsec_external_findings = _get_findings_by_type(
+            findings, Service.EXTERNAL.value
+        )
 
         # Bar chart data for tags
         rep["totals"]["chart_data"] = format_chart_data(findings)
@@ -916,8 +917,20 @@ class ReportDataSerializer(CustomModelSerializer):
         grade = calculate_grade(
             critical_findings, high_findings, medium_findings, low_findings
         )
-        # TODO For now just put grade in for every service to check if other code works first
         for service in [member.value for member in Service]:
             rep["totals"][f"report_grade_{service}"] = grade
+
+            # The below is needed for the netsec combo reports
+            if netsec_external_findings:
+                # Calculate the grade for netsec external findings
+                rep["totals"][f"report_grade_{Service.EXTERNAL.value}"] = (
+                    calculate_grade_by_findings(netsec_external_findings)
+                )
+
+            if netsec_internal_findings:
+                # Calculate the grade for netsec internal findings
+                rep["totals"][f"report_grade_{Service.INTERNAL.value}"] = (
+                    calculate_grade_by_findings(netsec_internal_findings)
+                )
 
         return rep

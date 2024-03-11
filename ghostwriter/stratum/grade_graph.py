@@ -1,4 +1,6 @@
-from .enums import Grade
+from itertools import groupby
+
+from .enums import Grade, Severity
 
 
 def _get_grade(score):
@@ -13,6 +15,21 @@ def _get_grade(score):
     else:
         grade = "F"
     return grade
+
+
+def calculate_grade_by_findings(findings):
+    findings.sort(key=lambda f: f["severity"])
+    # Group the data based on the key
+    grouped_data = {
+        key.lower(): len(list(group))
+        for key, group in groupby(findings, key=lambda f: f["severity"])
+    }
+    return calculate_grade(
+        grouped_data[Severity.CRIT.value.lower()],
+        grouped_data[Severity.HIGH.value.lower()],
+        grouped_data[Severity.MED.value.lower()],
+        grouped_data[Severity.LOW.value.lower()],
+    )
 
 
 def calculate_grade(critical, high, medium, low):
