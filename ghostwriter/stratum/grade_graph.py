@@ -19,7 +19,7 @@ def _get_grade(score):
     return grade
 
 
-def _group_findings_by_severity(findings, field="severity"):
+def _group_findings_by_severity(findings, field):
     findings.sort(key=lambda f: f[field])
     # Group the data based on the key
     return {
@@ -46,7 +46,7 @@ def _calculate_numeric_grade(critical, high, medium, low):
     return max(health, 5)
 
 
-def _calculate_grade(findings, func, field):
+def _calculate_grade(findings, func, field="severity"):
     # Group the data based on the key
     grouped_data = _group_findings_by_severity(findings, field)
     return func(
