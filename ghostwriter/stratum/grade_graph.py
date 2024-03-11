@@ -81,7 +81,7 @@ def calculate_average_grade(service, project_start_date):
 
     # If no reports, we have no data as it's new service then return "A"
     if not findings:
-        return Grade.A.value
+        return _get_grade(Grade.A.value)
 
     # Group the found findings by report and calculate the score for each report
     reports = {
@@ -99,7 +99,7 @@ def calculate_average_grade(service, project_start_date):
             reports.items(),
         )
     )
-    average = round(sum(grades) / len(grades))
+    average = sum(grades) / len(grades)
     return _get_grade(average)
 
 
