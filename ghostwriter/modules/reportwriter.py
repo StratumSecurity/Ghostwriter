@@ -349,10 +349,10 @@ def get_color_by_grade(grade):
     # Has to be {% cellbg ( totals.report_grade_appsec | color_by_grade) %}
     # cellbg doesn't like Jinja defined variables as the value such as cellbg jinja_var
     color_map = {
-        "A": "12a64d",
-        "B": "0070C0",
+        "A": "00B050",
+        "B": "70AD47",
         "C": "FFC000",
-        "D": "FF0000",
+        "D": "ED7D31",
         "F": "C00000",
     }
     return color_map[grade]
