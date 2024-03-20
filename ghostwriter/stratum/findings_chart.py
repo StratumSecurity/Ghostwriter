@@ -1,15 +1,44 @@
 from bs4 import BeautifulSoup
 from matplotlib import pyplot as plt
 
+from .enums import Severity
+
+TOTAL_LABEL = "total"
+WEIGHT_LABEL = "weight"
+SEVERITY_LABEL = "severity"
+
 
 def format_chart_data(findings):
     # Returns the findings to a specific format to return to custom_serializer to put in the JSON
     # to properly build the bar chart from reportwriter
     counts = {}
+    severity_weights = {
+        Severity.CRIT.value.lower(): 5,
+        Severity.HIGH.value.lower(): 4,
+        Severity.MED.value.lower(): 3,
+        Severity.LOW.value.lower(): 2,
+        Severity.INFO.value.lower(): 1,
+    }
+
     for finding in findings:
         soup = BeautifulSoup(finding["replication_steps"], "html.parser")
         category = soup.get_text()
-        counts[category] = counts.get(category, 0) + 1
+
+        # Totals and weights set for each category to properly sort the chart
+        severity = finding[SEVERITY_LABEL].lower()
+        weight = severity_weights.get(severity, 0)
+
+        counts[category] = counts.get(
+            category,
+            {
+                TOTAL_LABEL: 0,
+                WEIGHT_LABEL: 0,
+                SEVERITY_LABEL: {k: 0 for k in severity_weights},
+            },
+        )
+        counts[category][TOTAL_LABEL] += 1
+        counts[category][WEIGHT_LABEL] += weight
+        counts[category][SEVERITY_LABEL][severity] += 1
     return counts
 
 
@@ -19,17 +48,51 @@ def build_bar_chart(findings):
         return None
 
     fig, ax = plt.subplots()
-    # Sort findings by totals where max items are first
-    sorted_dict = dict(sorted(findings.items(), key=lambda x: x[1], reverse=True))
+    # Sort findings by totals and weights where max items are first
+    sorted_dict = dict(
+        sorted(
+            findings.items(),
+            key=lambda x: (x[1][TOTAL_LABEL], x[1][WEIGHT_LABEL]),
+            reverse=True,
+        )
+    )
 
-    labels = []
-    counts = []
-    for category, total in sorted_dict.items():
-        labels.append(category)
-        counts.append(total)
+    categories = list(sorted_dict.keys())
+    # Color scheme came from
+    # https://miro.medium.com/v2/resize:fit:500/format:webp/1*msOeUmFxdojyrur1kqxwaw.png
+    color = {
+        Severity.INFO.value.lower(): "#4E81BD",
+        Severity.LOW.value.lower(): "#8BC53F",
+        Severity.MED.value.lower(): "#F6941F",
+        Severity.HIGH.value.lower(): "#F0582B",
+        Severity.CRIT.value.lower(): "#DE0604",
+    }
 
-    # Horizontal Bar Plot
-    ax.barh(labels, counts, height=0.3)
+    bottom = [0] * len(categories)
+    # Makes sure the bars are ordered properly by severity where critical is on the right, etc...
+    severity_order = [
+        Severity.INFO,
+        Severity.LOW,
+        Severity.MED,
+        Severity.HIGH,
+        Severity.CRIT,
+    ]
+    for s in severity_order:
+        severity = s.value.lower()
+        severity_counts = [
+            # casing needs to match between the data coming in and the counts
+            sorted_dict[cat][SEVERITY_LABEL].get(severity, 0)
+            for cat in categories
+        ]
+        ax.barh(
+            categories,
+            severity_counts,
+            left=bottom,
+            color=color[severity],
+            label=severity,
+            height=0.3,
+        )
+        bottom = [sum(x) for x in zip(bottom, severity_counts)]
 
     # Remove axes splines
     for s in ["top", "bottom", "left", "right"]:
@@ -66,7 +129,8 @@ def build_bar_chart(findings):
     ax.invert_yaxis()
     # Set range from 0, incrementing by 1 up to the max findings +1 was needed
     # for max finding count to be shown in chart
-    ax.set_xticks([*range(0, max(counts) + 1)])
+    first_max_count_item = next(iter(sorted_dict.items()))
+    ax.set_xticks([*range(0, first_max_count_item[1][TOTAL_LABEL] + 1)])
 
     # Shrink figure to be close to current size in Word template
     # Current literals set make the figure fit on the page correctly
