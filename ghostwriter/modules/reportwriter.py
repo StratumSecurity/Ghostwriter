@@ -55,7 +55,6 @@ from ghostwriter.stratum.enums import (
     FindingStatusColor,
     Grade,
     Service,
-    Severity,
     get_value_from_key,
 )
 from ghostwriter.stratum.findings_chart import build_bar_chart, plt
@@ -273,30 +272,6 @@ def format_datetime(date, new_format):
             f'Invalid date string ("{date}") passed into the `format_datetime()` filter'
         )
     return formatted_date
-
-
-def sort_findings(findings):
-    # Using math to with appropriate weights to make sure mediums severities with low exploit don't pass highs or crits.
-    severities = {
-        Severity.CRIT.value.lower(): 200,
-        Severity.HIGH.value.lower(): 65,
-        Severity.MED.value.lower(): 20,
-        Severity.LOW.value.lower(): 5,
-        Severity.INFO.value.lower(): 1,
-    }
-    diff_of_exploit = {
-        Severity.LOW.value.lower(): 3,
-        Severity.MED.value.lower(): 2,
-        Severity.HIGH.value.lower(): 1,
-    }
-
-    for finding in findings:
-        weight = severities[finding["severity"].lower()] * diff_of_exploit.get(
-            strip_html(finding["host_detection_techniques"]).lower(), 1
-        )
-        finding["weight"] = weight
-
-    return sorted(findings, key=lambda f: f["weight"], reverse=True)
 
 
 def get_item(lst, index):
@@ -859,7 +834,7 @@ class Reportwriter:
 
                     # Add space point before the image to not overlap onto the table header
                     f = par.paragraph_format
-                    f.space_before = Pt(6)
+                    f.space_before = Pt(8)
 
                     try:
                         # Add the picture to the document and then add a border
