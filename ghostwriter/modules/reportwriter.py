@@ -365,7 +365,6 @@ def prepare_jinja2_env(debug=False):
     env.filters["compromised"] = compromised
     env.filters["add_days"] = add_days
     env.filters["format_datetime"] = format_datetime
-    env.filters["sort_findings"] = sort_findings
     env.filters["get_item"] = get_item
     env.filters["regex_search"] = regex_search
     env.filters["filter_tags"] = filter_tags
