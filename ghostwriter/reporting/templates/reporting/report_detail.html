@@ -146,7 +146,6 @@
             </div>
           </th>
           <th class="align-middle">Category</th>
-          <th class="align-middle">DoE</th>
           <th class="align-middle">Status</th>
           <th class="align-middle">
             <div class="dropdown dropleft">
@@ -268,7 +267,6 @@
                   </td>
                 {% endif %}
                 <td class="align-middle">{{ finding.replication_steps | striptags }}</td>
-                <td class="align-middle">{{ finding.host_detection_techniques | striptags }}</td>
                 <td class="align-middle">{{ finding.network_detection_techniques | striptags }}</td>
                 {% if finding.assigned_to == request.user %}
                   {% if finding.complete %}
