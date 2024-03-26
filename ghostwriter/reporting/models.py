@@ -171,7 +171,7 @@ class Finding(models.Model):
         "Category",
         null=True,
         blank=True,
-        help_text="Provide a finding category that fits: Authentication, Authorization, Availability, Configuration Management, Encryption, Information Disclosure, Input Validation, Patch Management, or Session Management",
+        help_text="Associate a category to this finding",
     )
     host_detection_techniques = models.TextField(
         "Difficulty of Exploit",
