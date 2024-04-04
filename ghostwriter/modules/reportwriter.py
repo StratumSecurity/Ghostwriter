@@ -54,6 +54,7 @@ from ghostwriter.reporting.models import Evidence
 from ghostwriter.stratum.enums import (
     FindingStatusColor,
     Grade,
+    GradeColor,
     Service,
     get_value_from_key,
 )
@@ -323,13 +324,7 @@ def get_color_by_grade(grade):
     # https://github.com/elapouya/python-docx-template/issues/373
     # Has to be {% cellbg ( totals.report_grade_appsec | color_by_grade) %}
     # cellbg doesn't like Jinja defined variables as the value such as cellbg jinja_var
-    color_map = {
-        "A": "00B050",
-        "B": "70AD47",
-        "C": "FFC000",
-        "D": "ED7D31",
-        "F": "C00000",
-    }
+    color_map = {i.name: i.value for i in GradeColor}
     return color_map[grade]
 
 
@@ -1042,6 +1037,13 @@ class Reportwriter:
         # Close the current figure window to clear up memory
         plt.close(fig)
 
+    def _get_grade_labels(self):
+        grade_labels = []
+        for label in ["report", "average"]:
+            for service in [member.value for member in Service]:
+                grade_labels.append(f"{label}_grade_{service}")
+        return grade_labels
+
     def _replace_and_write(
         self, text, par, finding, styles=ReportConstants.DEFAULT_STYLE_VALUES.copy()
     ):
@@ -1085,14 +1087,12 @@ class Reportwriter:
 
         # Grades for each service
         # Had to register new tags for grade support
-        for label in ["report", "average"]:
-            for service in [member.value for member in Service]:
-                service_label = f"{label}_grade_{service}"
-                if "{{." + service_label + "}}" in text:
-                    text = text.replace(
-                        "{{." + service_label + "}}",
-                        self.report_json["totals"][service_label].lower(),
-                    )
+        for service_label in self._get_grade_labels():
+            if "{{." + service_label + "}}" in text:
+                text = text.replace(
+                    "{{." + service_label + "}}",
+                    self.report_json["totals"][service_label].lower(),
+                )
 
         # Use regex to search for expressions to process
         keyword_regex = r"\{\{\.(.*?)\}\}"
@@ -1890,6 +1890,13 @@ class Reportwriter:
         context["project"]["chart_bar_internal_rt"] = render_subdocument(
             context["project"]["chart_bar_internal"], finding=None
         )
+
+        # Need to register rich text tags for grades in order
+        for grade_label in self._get_grade_labels():
+            grade = context["totals"][grade_label]
+            context["project"][f"{grade_label}_rt"] = RichText(
+                grade, color=get_color_by_grade(grade)
+            )
 
         # Assignments
         for assignment in context["team"]:

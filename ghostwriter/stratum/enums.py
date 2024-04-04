@@ -51,6 +51,14 @@ class Grade(Enum):
             return None
 
 
+class GradeColor(Enum):
+    A = "00B050"
+    B = "70AD47"
+    C = "FFC000"
+    D = "ED7D31"
+    F = "C00000"
+
+
 def get_value_from_key(e, key):
     for item in e:
         if item.value[0].lower() == key.lower():
