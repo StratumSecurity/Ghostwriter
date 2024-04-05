@@ -1893,10 +1893,11 @@ class Reportwriter:
 
         # Need to register rich text tags for grades in order
         for grade_label in self._get_grade_labels():
-            grade = context["totals"][grade_label]
-            context["project"][f"{grade_label}_rt"] = RichText(
-                grade, color=get_color_by_grade(grade)
-            )
+            grade = context["totals"].get(grade_label)
+            if grade:
+                context["project"][f"{grade_label}_rt"] = RichText(
+                    grade, color=get_color_by_grade(grade)
+                )
 
         # Assignments
         for assignment in context["team"]:
