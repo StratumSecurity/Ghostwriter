@@ -84,9 +84,7 @@ def build_bar_chart(findings):
     # figure should be smaller in height
     # First tuple value is the bar height and the second tuple value is the figure height
     heights = (0.3, 2.9)
-    if num_of_categories < 3:
-        heights = (0.4, 0.5)
-    elif num_of_categories == 3:
+    if num_of_categories <= 3:
         heights = (0.4, 0.8)
 
     for s in severity_order:

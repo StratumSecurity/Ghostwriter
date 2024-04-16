@@ -1140,12 +1140,19 @@ class Reportwriter:
                         if fig:
                             # Subtracting from the width and the height to make it fit
                             # perfectly on the page without the font looking squished together
+
+                            # Do not subtract if the figure height is less than 2
+                            # This is the case when there are only three categories
+                            fig_height = fig.get_figheight()
+                            if fig_height > 2:
+                                fig_height -= 0.8
+
                             self._add_image(
                                 par,
                                 fig,
                                 keyword,
                                 image_width=fig.get_figwidth() - 3,
-                                image_height=fig.get_figheight() - 0.8,
+                                image_height=fig_height,
                             )
 
                     if keyword == "chart_bar":
