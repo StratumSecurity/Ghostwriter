@@ -68,7 +68,8 @@ def build_bar_chart(findings):
         Severity.CRIT.value.lower(): "#DE0604",
     }
 
-    bottom = [0] * len(categories)
+    num_of_categories = len(categories)
+    bottom = [0] * num_of_categories
     # Makes sure the bars are ordered properly by severity where critical is on the right, etc...
     severity_order = [
         Severity.INFO,
@@ -77,6 +78,17 @@ def build_bar_chart(findings):
         Severity.HIGH,
         Severity.CRIT,
     ]
+
+    # Need this to make sure the bar sizes are fine and the figure size is appropriate
+    # For example, if only one finding is found the bar shouldn't be chunky and the
+    # figure should be smaller in height
+    # First tuple value is the bar height and the second tuple value is the figure height
+    heights = (0.3, 2.9)
+    if num_of_categories < 3:
+        heights = (0.4, 0.5)
+    elif num_of_categories == 3:
+        heights = (0.4, 0.8)
+
     for s in severity_order:
         severity = s.value.lower()
         severity_counts = [
@@ -90,7 +102,7 @@ def build_bar_chart(findings):
             left=bottom,
             color=color[severity],
             label=severity,
-            height=0.3,
+            height=heights[0],
         )
         bottom = [sum(x) for x in zip(bottom, severity_counts)]
 
@@ -134,6 +146,6 @@ def build_bar_chart(findings):
 
     # Shrink figure to be close to current size in Word template
     # Current literals set make the figure fit on the page correctly
-    fig.set_size_inches(10, 2.9)
+    fig.set_size_inches(10, heights[1])
     fig.set_dpi(200)
     return fig

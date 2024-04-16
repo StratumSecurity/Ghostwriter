@@ -1853,13 +1853,19 @@ class Reportwriter:
             finding["host_detection_techniques_rt"] = render_subdocument(
                 finding["host_detection_techniques"], finding, p_style
             )
-            finding["network_detection_techniques_rt"] = RichText(
-                strip_html(finding["network_detection_techniques"]),
-                color=get_value_from_key(
-                    FindingStatusColor,
-                    strip_html(finding["network_detection_techniques"]),
-                ),
-            )
+
+            # Finding Status field for retests but might not always be populated.
+            # We haven't been using GW for retests.
+            finding_status = finding["network_detection_techniques"]
+            if finding_status:
+                finding["network_detection_techniques_rt"] = RichText(
+                    strip_html(finding_status),
+                    color=get_value_from_key(
+                        FindingStatusColor,
+                        strip_html(finding_status),
+                    ),
+                )
+
             finding["references_rt"] = render_subdocument(
                 finding["references"], finding, p_style
             )
