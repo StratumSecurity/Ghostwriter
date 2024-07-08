@@ -64,7 +64,9 @@ class Severity(models.Model):
     def color_hex(self):
         """Return the severity color code as a list of hexadecimal."""
         n = 2
-        return tuple(hex(int(self.color[i : i + n], 16)) for i in range(0, len(self.color), n))
+        return tuple(
+            hex(int(self.color[i : i + n], 16)) for i in range(0, len(self.color), n)
+        )
 
     count = property(count_findings)
 
@@ -105,7 +107,9 @@ class Severity(models.Model):
                         if not self.pk == category.pk:
                             if self.weight == counter:
                                 counter += 1
-                            severity_queryset.filter(id=category.id).update(weight=counter)
+                            severity_queryset.filter(id=category.id).update(
+                                weight=counter
+                            )
                             counter += 1
                         else:
                             pass
@@ -118,7 +122,9 @@ class Severity(models.Model):
 class FindingType(models.Model):
     """Stores an individual finding type."""
 
-    finding_type = models.CharField("Type", max_length=255, unique=True, help_text="Type of finding (e.g. network)")
+    finding_type = models.CharField(
+        "Type", max_length=255, unique=True, help_text="Type of finding (e.g. network)"
+    )
 
     def count_findings(self):
         """Return the number of :model:`reporting.Finding` associated with an instance."""
@@ -157,28 +163,28 @@ class Finding(models.Model):
         help_text="Describe the impact of this finding on the affected entities",
     )
     mitigation = models.TextField(
-        "Mitigation",
+        "Recommendation",
         blank=True,
         default="",
         help_text="Describe how this finding can be resolved or addressed",
     )
     replication_steps = models.TextField(
-        "Replication Steps",
+        "Category",
         blank=True,
         default="",
-        help_text="Provide an explanation for how the reader may reproduce this finding",
+        help_text="Associate a category to this finding",
     )
     host_detection_techniques = models.TextField(
-        "Host Detection Techniques",
+        "Difficulty of Exploit",
         blank=True,
         default="",
-        help_text="Describe how this finding can be detected on an endpoint - leave blank if this does not apply",
+        help_text="Assign the difficulty of exploitation that fits: LOW, MEDIUM, HIGH",
     )
     network_detection_techniques = models.TextField(
-        "Network Detection Techniques",
+        "Status of Finding",
         blank=True,
         default="",
-        help_text="Describe how this finding can be detected on a network - leave blank if this does not apply",
+        help_text="Assign a status of OPEN, ACCEPTED, or CLOSED to the finding",
     )
     references = models.TextField(
         "References",
@@ -323,7 +329,9 @@ class ReportTemplate(models.Model):
     )
     tags = TaggableManager(blank=True)
     # Foreign Keys
-    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
+    )
     client = models.ForeignKey(
         "rolodex.Client",
         on_delete=models.CASCADE,
@@ -367,7 +375,9 @@ class ReportTemplate(models.Model):
             try:
                 result_code = self.lint_result["result"]
             except json.decoder.JSONDecodeError:  # pragma: no cover
-                logger.exception("Could not decode data in model as JSON: %r", self.lint_result)
+                logger.exception(
+                    "Could not decode data in model as JSON: %r", self.lint_result
+                )
             except Exception:  # pragma: no cover
                 logger.exception(
                     "Encountered an exception while trying to decode this as JSON: %r",
@@ -386,18 +396,28 @@ class ReportTemplate(models.Model):
         if self.doc_type.doc_type == "docx":
             assert isinstance(object, Report)
             from ghostwriter.modules.reportwriter.report.docx import ExportReportDocx
-            return ExportReportDocx(object, template_loc=self.document.path, p_style=self.p_style)
+
+            return ExportReportDocx(
+                object, template_loc=self.document.path, p_style=self.p_style
+            )
         if self.doc_type.doc_type == "project_docx":
             assert isinstance(object, Project)
             from ghostwriter.modules.reportwriter.project.docx import ExportProjectDocx
-            return ExportProjectDocx(object, template_loc=self.document.path, p_style=self.p_style)
+
+            return ExportProjectDocx(
+                object, template_loc=self.document.path, p_style=self.p_style
+            )
         if self.doc_type.doc_type == "pptx" and isinstance(object, Report):
             from ghostwriter.modules.reportwriter.report.pptx import ExportReportPptx
+
             return ExportReportPptx(object, template_loc=self.document.path)
         if self.doc_type.doc_type == "pptx" and isinstance(object, Project):
             from ghostwriter.modules.reportwriter.project.pptx import ExportProjectPptx
+
             return ExportProjectPptx(object, template_loc=self.document.path)
-        raise RuntimeError(f"Template for doc_type {self.doc_type.doc_type} and object {object} not implemented. Either this is a bug or an admin messed with the database.")
+        raise RuntimeError(
+            f"Template for doc_type {self.doc_type.doc_type} and object {object} not implemented. Either this is a bug or an admin messed with the database."
+        )
 
     def lint(self):
         """
@@ -408,7 +428,9 @@ class ReportTemplate(models.Model):
         try:
             warnings, errors = self.lint_raw()
         except Exception:
-            logging.exception("Could not lint template %d (%s)", self.pk, self.document.path)
+            logging.exception(
+                "Could not lint template %d (%s)", self.pk, self.document.path
+            )
             warnings = []
             errors = ["Unexpected error while linting template"]
 
@@ -425,9 +447,13 @@ class ReportTemplate(models.Model):
         self.lint_result = results.copy()
 
         if results["result"] == "success":
-            results["message"] = "Template linter returned results with no errors or warnings."
+            results["message"] = (
+                "Template linter returned results with no errors or warnings."
+            )
         else:
-            results["message"] = "Template linter returned results with issues that require attention."
+            results["message"] = (
+                "Template linter returned results with issues that require attention."
+            )
         return results
 
     def lint_raw(self):
@@ -437,15 +463,24 @@ class ReportTemplate(models.Model):
         # Import in function to avoid circular references
         if self.doc_type.doc_type == "docx":
             from ghostwriter.modules.reportwriter.report.docx import ExportReportDocx
-            return ExportReportDocx.lint(template_loc=self.document.path, p_style=self.p_style)
+
+            return ExportReportDocx.lint(
+                template_loc=self.document.path, p_style=self.p_style
+            )
         if self.doc_type.doc_type == "project_docx":
             from ghostwriter.modules.reportwriter.project.docx import ExportProjectDocx
-            return ExportProjectDocx.lint(template_loc=self.document.path, p_style=self.p_style)
+
+            return ExportProjectDocx.lint(
+                template_loc=self.document.path, p_style=self.p_style
+            )
         if self.doc_type.doc_type == "pptx":
             # Report PPTX exporter exports more content, so use it to lint
             from ghostwriter.modules.reportwriter.report.pptx import ExportReportPptx
+
             return ExportReportPptx.lint(template_loc=self.document.path)
-        raise RuntimeError(f"Lint for doc_type {self.doc_type.doc_type} not implemented. Either this is a bug or an admin messed with the database.")
+        raise RuntimeError(
+            f"Lint for doc_type {self.doc_type.doc_type} not implemented. Either this is a bug or an admin messed with the database."
+        )
 
 
 class Report(models.Model):
@@ -457,10 +492,18 @@ class Report(models.Model):
         default="New Report",
         help_text="Provide a meaningful title for this report - this is only seen in Ghostwriter",
     )
-    creation = models.DateField("Creation Date", auto_now_add=True, help_text="Date the report was created")
-    last_update = models.DateField("Last Update", auto_now=True, help_text="Date the report was last touched")
-    complete = models.BooleanField("Completed", default=False, help_text="Mark the report as complete")
-    archived = models.BooleanField("Archived", default=False, help_text="Mark the report as archived")
+    creation = models.DateField(
+        "Creation Date", auto_now_add=True, help_text="Date the report was created"
+    )
+    last_update = models.DateField(
+        "Last Update", auto_now=True, help_text="Date the report was last touched"
+    )
+    complete = models.BooleanField(
+        "Completed", default=False, help_text="Mark the report as complete"
+    )
+    archived = models.BooleanField(
+        "Archived", default=False, help_text="Mark the report as archived"
+    )
     tags = TaggableManager(blank=True)
     extra_fields = models.JSONField(default=dict)
     # Foreign Keys
@@ -488,8 +531,12 @@ class Report(models.Model):
         null=True,
         help_text="Select the PowerPoint template to use for this report",
     )
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
-    delivered = models.BooleanField("Delivered", default=False, help_text="Delivery status of the report")
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    delivered = models.BooleanField(
+        "Delivered", default=False, help_text="Delivery status of the report"
+    )
 
     class Meta:
         ordering = ["-creation", "-last_update", "project"]
@@ -519,8 +566,12 @@ class Report(models.Model):
 
         if updated_template.client is not None:
             q_mismatched = ~Q(project__client__id=updated_template.client.id)
-            filter_docx = filter_docx | (Q(docx_template__id=updated_template.id) & q_mismatched)
-            filter_pptx = filter_pptx | (Q(pptx_template__id=updated_template.id) & q_mismatched)
+            filter_docx = filter_docx | (
+                Q(docx_template__id=updated_template.id) & q_mismatched
+            )
+            filter_pptx = filter_pptx | (
+                Q(pptx_template__id=updated_template.id) & q_mismatched
+            )
 
         cls.objects.filter(filter_docx).update(docx_template=None)
         cls.objects.filter(filter_pptx).update(pptx_template=None)
@@ -530,8 +581,7 @@ class Report(models.Model):
         Returns a queryset of all evidences attached to the report - both directly attached and through the findings.
         """
         return Evidence.objects.filter(
-            Q(report__id=self.pk)
-            | Q(finding__report__id=self.pk)
+            Q(report__id=self.pk) | Q(finding__report__id=self.pk)
         )
 
     def __str__(self):
@@ -555,10 +605,10 @@ class ReportFindingLink(models.Model):
         validators=[MinValueValidator(1)],
     )
     affected_entities = models.TextField(
-        "Affected Entities",
+        "Details",
         default="",
         blank=True,
-        help_text="Provide a list of the affected entities (e.g. domains, hostnames, IP addresses)",
+        help_text="Provide details of the finding and how to reproduce",
     )
     description = models.TextField(
         "Description",
@@ -573,28 +623,28 @@ class ReportFindingLink(models.Model):
         help_text="Describe the impact of this finding on the affected entities",
     )
     mitigation = models.TextField(
-        "Mitigation",
+        "Recommendation",
         default="",
         blank=True,
         help_text="Describe how this finding can be resolved or addressed",
     )
     replication_steps = models.TextField(
-        "Replication Steps",
+        "Category",
         default="",
         blank=True,
-        help_text="Provide an explanation for how the reader may reproduce this finding",
+        help_text="Associate a category to this finding",
     )
     host_detection_techniques = models.TextField(
-        "Host Detection Techniques",
+        "Difficulty of Exploit",
         default="",
         blank=True,
-        help_text="Describe how this finding can be detected on an endpoint - leave blank if this does not apply",
+        help_text="Assign the difficulty of exploitation that fits: LOW, MEDIUM, HIGH",
     )
     network_detection_techniques = models.TextField(
-        "Network Detection Techniques",
+        "Status of Finding",
         default="",
         blank=True,
-        help_text="Describe how this finding can be detected on a network - leave blank if this does not apply",
+        help_text="Assign a status of OPEN, ACCEPTED, or CLOSED to the finding",
     )
     references = models.TextField(
         "References",
@@ -704,9 +754,15 @@ class Evidence(models.Model):
     )
     tags = TaggableManager(blank=True)
     # Foreign Keys
-    finding = models.ForeignKey("ReportFindingLink", on_delete=models.CASCADE, null=True, blank=True)
-    report = models.ForeignKey("Report", on_delete=models.CASCADE, null=True, blank=True)
-    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    finding = models.ForeignKey(
+        "ReportFindingLink", on_delete=models.CASCADE, null=True, blank=True
+    )
+    report = models.ForeignKey(
+        "Report", on_delete=models.CASCADE, null=True, blank=True
+    )
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
+    )
 
     class Meta:
         ordering = ["finding", "report", "document"]
@@ -719,7 +775,7 @@ class Evidence(models.Model):
                 check=(
                     models.Q(finding__isnull=True, report__isnull=False)
                     | models.Q(finding__isnull=False, report__isnull=True)
-                )
+                ),
             )
         ]
 
@@ -766,7 +822,9 @@ class Archive(models.Model):
 class FindingNote(models.Model):
     """Stores an individual finding note, related to :model:`reporting.Finding`."""
 
-    timestamp = models.DateField("Timestamp", auto_now_add=True, help_text="Creation timestamp")
+    timestamp = models.DateField(
+        "Timestamp", auto_now_add=True, help_text="Creation timestamp"
+    )
     note = models.TextField(
         "Notes",
         blank=True,
@@ -775,7 +833,9 @@ class FindingNote(models.Model):
     )
     # Foreign Keys
     finding = models.ForeignKey("Finding", on_delete=models.CASCADE, null=False)
-    operator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    operator = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
+    )
 
     class Meta:
         ordering = ["finding", "-timestamp"]
@@ -789,7 +849,9 @@ class FindingNote(models.Model):
 class LocalFindingNote(models.Model):
     """Stores an individual finding note in a report, related to :model:`reporting.ReportFindingLink`."""
 
-    timestamp = models.DateField("Timestamp", auto_now_add=True, help_text="Creation timestamp")
+    timestamp = models.DateField(
+        "Timestamp", auto_now_add=True, help_text="Creation timestamp"
+    )
     note = models.TextField(
         "Notes",
         default="",
@@ -797,8 +859,12 @@ class LocalFindingNote(models.Model):
         help_text="Provide additional information about the finding",
     )
     # Foreign Keys
-    finding = models.ForeignKey("ReportFindingLink", on_delete=models.CASCADE, null=False)
-    operator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    finding = models.ForeignKey(
+        "ReportFindingLink", on_delete=models.CASCADE, null=False
+    )
+    operator = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
+    )
 
     class Meta:
         ordering = ["finding", "-timestamp"]

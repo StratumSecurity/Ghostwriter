@@ -54,6 +54,13 @@ from ghostwriter.shepherd.models import (
     StaticServer,
     TransientServer,
 )
+from ghostwriter.stratum.enums import Service, Severity
+from ghostwriter.stratum.findings_chart import format_chart_data
+from ghostwriter.stratum.grade_graph import (
+    calculate_grade,
+    calculate_grade_by_findings,
+    calculate_average_grade,
+)
 from ghostwriter.users.models import User
 
 
@@ -113,7 +120,7 @@ class ExtraFieldsSerField(serializers.Field):
     def __init__(self, model_name, **kwargs):
         self.model_name = model_name
         self.root_ser = None
-        kwargs['read_only'] = True
+        kwargs["read_only"] = True
         super().__init__(**kwargs)
 
     def bind(self, field_name, parent):
@@ -127,10 +134,15 @@ class ExtraFieldsSerField(serializers.Field):
         out = {}
 
         # Fetch field specs, and cache them at the root serializer
-        if not hasattr(self.root_ser, "_extra_fields_specs") or self.root_ser._extra_fields_specs is None:
+        if (
+            not hasattr(self.root_ser, "_extra_fields_specs")
+            or self.root_ser._extra_fields_specs is None
+        ):
             self.root_ser._extra_fields_specs = {}
         if self.model_name not in self.root_ser._extra_fields_specs:
-            self.root_ser._extra_fields_specs[self.model_name] = ExtraFieldSpec.objects.filter(target_model=self.model_name)
+            self.root_ser._extra_fields_specs[self.model_name] = (
+                ExtraFieldSpec.objects.filter(target_model=self.model_name)
+            )
 
         # Populate output
         for field in self.root_ser._extra_fields_specs[self.model_name]:
@@ -164,7 +176,14 @@ class CompanyInfoSerializer(CustomModelSerializer):
 
     class Meta:
         model = CompanyInformation
-        exclude = ["id", "company_name", "company_short_name", "company_address", "company_twitter", "company_email"]
+        exclude = [
+            "id",
+            "company_name",
+            "company_short_name",
+            "company_address",
+            "company_twitter",
+            "company_email",
+        ]
 
 
 class EvidenceSerializer(TaggitSerializer, CustomModelSerializer):
@@ -279,8 +298,12 @@ class ReportSerializer(TaggitSerializer, CustomModelSerializer):
     creation = SerializerMethodField("get_last_update")
     total_findings = SerializerMethodField("get_total_findings")
 
-    findings = FindingLinkSerializer(source="reportfindinglink_set", many=True, exclude=["id", "report"])
-    observations = ObservationLinkSerializer(source="reportobservationlink_set", many=True, exclude=["id", "report"])
+    findings = FindingLinkSerializer(
+        source="reportfindinglink_set", many=True, exclude=["id", "report"]
+    )
+    observations = ObservationLinkSerializer(
+        source="reportobservationlink_set", many=True, exclude=["id", "report"]
+    )
 
     tags = TagListSerializerField()
 
@@ -514,10 +537,7 @@ class DomainHistorySerializer(CustomModelSerializer):
         exclude=["id", "project", "domain"],
     )
 
-    extra_fields = ExtraFieldsSerField(
-        Domain._meta.label,
-        source="domain.extra_fields"
-    )
+    extra_fields = ExtraFieldsSerField(Domain._meta.label, source="domain.extra_fields")
 
     class Meta:
         model = History
@@ -568,8 +588,7 @@ class ServerHistorySerializer(CustomModelSerializer):
     )
 
     extra_fields = ExtraFieldsSerField(
-        StaticServer._meta.label,
-        source="server.extra_fields"
+        StaticServer._meta.label, source="server.extra_fields"
     )
 
     class Meta:
@@ -644,7 +663,9 @@ class ProjectSerializer(TaggitSerializer, CustomModelSerializer):
 
     timezone = TimeZoneSerializerField()
 
-    notes = ProjectNoteSerializer(source="projectnote_set", many=True, exclude=["id", "project"])
+    notes = ProjectNoteSerializer(
+        source="projectnote_set", many=True, exclude=["id", "project"]
+    )
 
     tags = TagListSerializerField()
     extra_fields = ExtraFieldsSerField(Project._meta.label)
@@ -695,7 +716,9 @@ class ProjectInfrastructureSerializer(CustomModelSerializer):
         many=True,
         exclude=["id", "project", "operator", "client"],
     )
-    cloud = TransientServerSerializer(source="transientserver_set", many=True, exclude=["id", "project", "operator"])
+    cloud = TransientServerSerializer(
+        source="transientserver_set", many=True, exclude=["id", "project", "operator"]
+    )
     servers = ServerHistorySerializer(
         source="serverhistory_set",
         many=True,
@@ -756,17 +779,34 @@ class OplogSerializer(TaggitSerializer, CustomModelSerializer):
 
 class FullProjectSerializer(serializers.Serializer):
     """Serialize :model:`rolodex:Project` and related entries."""
+
     project = ProjectSerializer(source="*")
     client = ClientSerializer()
-    contacts = ProjectContactSerializer(source="projectcontact_set", many=True, exclude=["id", "project"])
-    team = ProjectAssignmentSerializer(source="projectassignment_set", many=True, exclude=["id", "project"])
-    objectives = ProjectObjectiveSerializer(source="projectobjective_set", many=True, exclude=["id", "project"])
-    targets = ProjectTargetSerializer(source="projecttarget_set", many=True, exclude=["id", "project"])
-    scope = ProjectScopeSerializer(source="projectscope_set", many=True, exclude=["id", "project"])
-    deconflictions = DeconflictionSerializer(source="deconfliction_set", many=True, exclude=["id", "project"])
-    whitecards = WhiteCardSerializer(source="whitecard_set", many=True, exclude=["id", "project"])
+    contacts = ProjectContactSerializer(
+        source="projectcontact_set", many=True, exclude=["id", "project"]
+    )
+    team = ProjectAssignmentSerializer(
+        source="projectassignment_set", many=True, exclude=["id", "project"]
+    )
+    objectives = ProjectObjectiveSerializer(
+        source="projectobjective_set", many=True, exclude=["id", "project"]
+    )
+    targets = ProjectTargetSerializer(
+        source="projecttarget_set", many=True, exclude=["id", "project"]
+    )
+    scope = ProjectScopeSerializer(
+        source="projectscope_set", many=True, exclude=["id", "project"]
+    )
+    deconflictions = DeconflictionSerializer(
+        source="deconfliction_set", many=True, exclude=["id", "project"]
+    )
+    whitecards = WhiteCardSerializer(
+        source="whitecard_set", many=True, exclude=["id", "project"]
+    )
     infrastructure = ProjectInfrastructureSerializer(source="*")
-    logs = OplogSerializer(source="oplog_set", many=True, exclude=["id", "mute_notifications", "project"])
+    logs = OplogSerializer(
+        source="oplog_set", many=True, exclude=["id", "mute_notifications", "project"]
+    )
     report_date = SerializerMethodField("get_report_date")
     company = SerializerMethodField("get_company_info")
     tools = SerializerMethodField("get_tools")
@@ -809,15 +849,31 @@ class ReportDataSerializer(CustomModelSerializer):
     )
     client = ClientSerializer(source="project.client")
     recipient = SerializerMethodField("get_recipient")
-    contacts = ProjectContactSerializer(source="project.projectcontact_set", many=True, exclude=["id", "project"])
-    team = ProjectAssignmentSerializer(source="project.projectassignment_set", many=True, exclude=["id", "project"])
-    objectives = ProjectObjectiveSerializer(source="project.projectobjective_set", many=True, exclude=["id", "project"])
-    targets = ProjectTargetSerializer(source="project.projecttarget_set", many=True, exclude=["id", "project"])
-    scope = ProjectScopeSerializer(source="project.projectscope_set", many=True, exclude=["id", "project"])
-    deconflictions = DeconflictionSerializer(source="project.deconfliction_set", many=True, exclude=["id", "project"])
-    whitecards = WhiteCardSerializer(source="project.whitecard_set", many=True, exclude=["id", "project"])
+    contacts = ProjectContactSerializer(
+        source="project.projectcontact_set", many=True, exclude=["id", "project"]
+    )
+    team = ProjectAssignmentSerializer(
+        source="project.projectassignment_set", many=True, exclude=["id", "project"]
+    )
+    objectives = ProjectObjectiveSerializer(
+        source="project.projectobjective_set", many=True, exclude=["id", "project"]
+    )
+    targets = ProjectTargetSerializer(
+        source="project.projecttarget_set", many=True, exclude=["id", "project"]
+    )
+    scope = ProjectScopeSerializer(
+        source="project.projectscope_set", many=True, exclude=["id", "project"]
+    )
+    deconflictions = DeconflictionSerializer(
+        source="project.deconfliction_set", many=True, exclude=["id", "project"]
+    )
+    whitecards = WhiteCardSerializer(
+        source="project.whitecard_set", many=True, exclude=["id", "project"]
+    )
     infrastructure = ProjectInfrastructureSerializer(source="project")
-    evidence = EvidenceSerializer(source="evidence_set", many=True, exclude=["report", "finding"])
+    evidence = EvidenceSerializer(
+        source="evidence_set", many=True, exclude=["report", "finding"]
+    )
     findings = FindingLinkSerializer(
         source="reportfindinglink_set",
         many=True,
@@ -856,7 +912,11 @@ class ReportDataSerializer(CustomModelSerializer):
             "client",
         ]
     )
-    logs = OplogSerializer(source="project.oplog_set", many=True, exclude=["id", "mute_notifications", "project"])
+    logs = OplogSerializer(
+        source="project.oplog_set",
+        many=True,
+        exclude=["id", "mute_notifications", "project"],
+    )
     company = SerializerMethodField("get_company_info")
     tools = SerializerMethodField("get_tools")
     extra_fields = ExtraFieldsSerField(Report._meta.label)
@@ -893,8 +953,15 @@ class ReportDataSerializer(CustomModelSerializer):
         # Get the standard JSON from ``super()``
         rep = super().to_representation(instance)
 
+        # Filter findings that are marked as complete
+        # This field is used for publishing findings to a report when they are ready
+        # This field is also used to exclude findings from a report - according to netsec experience with customers
+        findings = list(filter(lambda finding: finding["complete"], rep["findings"]))
+        # Reassigns to make sure the findings ref in templates will be the filtered completed findings
+        rep["findings"] = findings
+
         # Calculate totals for various values
-        total_findings = len(rep["findings"])
+        total_findings = len(findings)
         total_objectives = len(rep["objectives"])
         total_team = len(rep["team"])
         total_targets = len(rep["targets"])
@@ -914,17 +981,25 @@ class ReportDataSerializer(CustomModelSerializer):
         medium_findings = 0
         low_findings = 0
         info_findings = 0
-        for finding in rep["findings"]:
+
+        date_format = "%d %b %Y"
+        project_start_date = datetime.strptime(
+            rep["project"]["start_date"], date_format
+        )
+
+        for finding in findings:
             finding["ordering"] = finding_order
-            if finding["severity"].lower() == "critical":
+            severity = finding["severity"].lower()
+
+            if severity == Severity.CRIT.value.lower():
                 critical_findings += 1
-            elif finding["severity"].lower() == "high":
+            elif severity == Severity.HIGH.value.lower():
                 high_findings += 1
-            elif finding["severity"].lower() == "medium":
+            elif severity == Severity.MED.value.lower():
                 medium_findings += 1
-            elif finding["severity"].lower() == "low":
+            elif severity == Severity.LOW.value.lower():
                 low_findings += 1
-            elif finding["severity"].lower() == "informational":
+            elif severity == Severity.INFO.value.lower():
                 info_findings += 1
             finding_order += 1
 
@@ -941,6 +1016,71 @@ class ReportDataSerializer(CustomModelSerializer):
         rep["totals"]["scope"] = total_scope_lines
         rep["totals"]["team"] = total_team
         rep["totals"]["targets"] = total_targets
+
+        def _get_findings_by_type(findings, type):
+            return list(
+                filter(
+                    lambda finding: finding["finding_type"].lower() == type, findings
+                )
+            )
+
+        netsec_internal_findings = _get_findings_by_type(
+            findings, Service.INTERNAL.value
+        )
+        netsec_external_findings = _get_findings_by_type(
+            findings, Service.EXTERNAL.value
+        )
+
+        # Bar chart data for tags
+        rep["totals"]["chart_data"] = format_chart_data(findings)
+
+        # Check if there are any netsec findings, GW will hit this on report generation
+        # for appsec reports where both are empty arrays and throw an error on report generation
+        # Use all findings marked in report for these values in those cases
+        rep["totals"]["chart_data_internal"] = format_chart_data(
+            netsec_internal_findings if netsec_internal_findings else findings
+        )
+        rep["totals"]["chart_data_external"] = format_chart_data(
+            netsec_external_findings if netsec_external_findings else findings
+        )
+
+        # Look at lint utils for field names under totals
+        # Calculate the current grades for each service; only current report findings,
+        # and external/internal separately for combo report
+        grade = calculate_grade(
+            critical_findings, high_findings, medium_findings, low_findings
+        )
+        for service in [member.value for member in Service]:
+            rep["totals"][f"report_grade_{service}"] = grade
+
+            # The below is needed for the netsec combo reports
+            if netsec_external_findings:
+                # Calculate the grade for netsec external findings
+                s = Service.EXTERNAL.value.lower()
+                rep["totals"][f"report_grade_{s}"] = calculate_grade_by_findings(
+                    netsec_external_findings
+                )
+                rep["totals"][f"average_grade_{s}"] = calculate_average_grade(
+                    s, project_start_date
+                )
+
+            if netsec_internal_findings:
+                # Calculate the grade for netsec internal findings
+                s = Service.INTERNAL.value.lower()
+                rep["totals"][f"report_grade_{s}"] = calculate_grade_by_findings(
+                    netsec_internal_findings
+                )
+                rep["totals"][f"average_grade_{s}"] = calculate_average_grade(
+                    s, project_start_date
+                )
+
+            if not netsec_external_findings and not netsec_internal_findings:
+                # Calculate the average for any other service
+                # We do this here because we want to make sure we don't do a
+                # second database hit unless it's a combo report
+                rep["totals"][f"average_grade_{service}"] = calculate_average_grade(
+                    service, project_start_date
+                )
 
         return rep
 
