@@ -1,6 +1,8 @@
 # Standard Libraries
 from enum import Enum
 
+from bs4 import BeautifulSoup
+
 
 class Severity(Enum):
     CRIT = "Critical"
@@ -60,6 +62,9 @@ class GradeColor(Enum):
 
 
 def get_value_from_key(e, key):
+    # Strip HTML tags from UI data that get added by TinyMCE
+    soup = BeautifulSoup(key, "html.parser")
+    key = soup.get_text()
     for item in e:
         if item.value[0].lower() == key.lower():
             return item.value[1]
