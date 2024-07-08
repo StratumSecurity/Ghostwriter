@@ -126,9 +126,6 @@ class ExportDocxBase(ExportBase):
         )
 
         try:
-            # Custom code needed to add bar chart and the data to the document
-            build_report_bar_chart(self.word_doc, docx_context)
-
             ReportExportError.map_jinja2_render_errors(
                 lambda: self.word_doc.render(
                     docx_context, self.jinja_env, autoescape=True
@@ -138,6 +135,9 @@ class ExportDocxBase(ExportBase):
             ReportExportError.map_jinja2_render_errors(
                 lambda: self.render_properties(docx_context), "the DOCX properties"
             )
+
+            # Custom code needed to add bar chart and the data to the document
+            build_report_bar_chart(self.word_doc, docx_context)
         except UnrecognizedImageError as err:
             raise ReportExportError(
                 f"Could not load an image: {err}", "the DOCX template"
