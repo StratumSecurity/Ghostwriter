@@ -11,6 +11,7 @@ import jinja2
 import jinja2.sandbox
 
 from ghostwriter.modules.reportwriter import jinja_funcs
+from stratum.reportwriter import jinja_funcs as stratum_jinja_funcs
 
 logger = logging.getLogger(__name__)
 
@@ -41,11 +42,14 @@ def prepare_jinja2_env(debug=False):
             def __bool__(self):
                 self._record()
                 return super().__bool__()
+
         undefined = RecordUndefined
     else:
         undefined = jinja2.make_logging_undefined(logger=logger, base=jinja2.Undefined)
 
-    env = jinja2.sandbox.SandboxedEnvironment(undefined=undefined, extensions=["jinja2.ext.debug"], autoescape=True)
+    env = jinja2.sandbox.SandboxedEnvironment(
+        undefined=undefined, extensions=["jinja2.ext.debug"], autoescape=True
+    )
     env.filters["filter_severity"] = jinja_funcs.filter_severity
     env.filters["filter_type"] = jinja_funcs.filter_type
     env.filters["strip_html"] = jinja_funcs.strip_html
@@ -55,6 +59,8 @@ def prepare_jinja2_env(debug=False):
     env.filters["get_item"] = jinja_funcs.get_item
     env.filters["regex_search"] = jinja_funcs.regex_search
     env.filters["filter_tags"] = jinja_funcs.filter_tags
+    env.filters["color_by_grade"] = stratum_jinja_funcs.get_color_by_grade
+    env.filters["compare_grade"] = stratum_jinja_funcs.get_grade_comparison
 
     if debug:
         return env, undefined_vars
