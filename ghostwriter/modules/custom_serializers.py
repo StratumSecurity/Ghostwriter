@@ -1038,10 +1038,10 @@ class ReportDataSerializer(CustomModelSerializer):
         # for appsec reports where both are empty arrays and throw an error on report generation
         # Use all findings marked in report for these values in those cases
         rep["totals"]["chart_data_internal"] = format_chart_data(
-            netsec_internal_findings if netsec_internal_findings else findings
+            netsec_internal_findings if netsec_internal_findings else {}
         )
         rep["totals"]["chart_data_external"] = format_chart_data(
-            netsec_external_findings if netsec_external_findings else findings
+            netsec_external_findings if netsec_external_findings else {}
         )
 
         # Look at lint utils for field names under totals

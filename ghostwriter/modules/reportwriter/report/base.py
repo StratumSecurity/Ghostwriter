@@ -106,7 +106,6 @@ class ExportReportBase(ExportBase):
             # TODO Maybe migrate away from this to extra fields for Finding Status?
             finding_status = finding["network_detection_techniques"]
             if finding_status:
-                # TODO Might have to grab strip_html and sanitize finding_status before passing to new code
                 finding["network_detection_techniques_rt"] = self._severity_rich_text(finding_status, get_value_from_key(FindingStatusColor, finding_status))
 
             finding["network_detection_techniques_rt"] = finding_render("the network detection techniques section", finding["network_detection_techniques"])
@@ -123,9 +122,9 @@ class ExportReportBase(ExportBase):
         self.process_extra_fields("the project", base_context["project"]["extra_fields"], Project, rich_text_context)
 
         # Bar Charts
-        base_context["project"]["chart_bar_rt"] = self.create_lazy_template("the report bar chart", "<p>{{.chart_bar}}</p>", rich_text_context)
-        base_context["project"]["chart_bar_external_rt"] = self.create_lazy_template("the report bar chart", "<p>{{.chart_bar_external}}</p>", rich_text_context)
-        base_context["project"]["chart_bar_internal_rt"] = self.create_lazy_template("the report bar chart", "<p>{{.chart_bar_internal}}</p>", rich_text_context)
+        base_context["project"]["chart_bar_rt"] = self.create_lazy_template("the report bar chart", "<p></p>", rich_text_context)
+        base_context["project"]["chart_bar_external_rt"] = self.create_lazy_template("the report bar chart", "<p></p>", rich_text_context)
+        base_context["project"]["chart_bar_internal_rt"] = self.create_lazy_template("the report bar chart", "<p></p>", rich_text_context)
 
         # Need to register rich text tags for grades in order
         for grade_label in get_grade_labels():

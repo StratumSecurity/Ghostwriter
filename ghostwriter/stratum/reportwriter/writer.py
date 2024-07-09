@@ -68,7 +68,7 @@ def _get_paragraph_of_variable(word_doc, variable_name):
     # Iterate through all paragraphs in the document
     for paragraph in word_doc.paragraphs:
         # Check if the variable is in the paragraph's text
-        if f"{{{{{variable_name}}}}}" in paragraph.text:
+        if variable_name in paragraph.text:
             return paragraph
 
     # If the variable is not found in any paragraph
@@ -77,24 +77,25 @@ def _get_paragraph_of_variable(word_doc, variable_name):
 
 def build_report_bar_chart(word_doc, docx_context):
     # Custom code needed to add bar chart and the data to the document
-    variables = word_doc.get_undeclared_template_variables()
     # Project ID is needed to save the chart file as it's part of the filename
     project_id = docx_context["project"]["id"]
 
     chart_tag_mappings = [
-        ("project.chart_bar_rt", "chart_data"),
-        ("project.chart_bar_external_rt", "chart_data_external"),
-        ("project.chart_bar_internal_rt", "chart_data_internal"),
+        ("chart_bar_rt", "chart_data"),
+        ("chart_bar_external_rt", "chart_data_external"),
+        ("chart_bar_internal_rt", "chart_data_internal"),
     ]
 
     for chart_tag, chart_data_label in chart_tag_mappings:
-        if chart_tag in variables:
+        # Only generate the chart if there is chart data
+        # This is needed as we only need to iterate once when it's not netsec reports
+        chart_data = docx_context["totals"][chart_data_label]
+        if chart_data and docx_context["project"][chart_tag]:
             # Get chart data from context
             # Build the report chart to add to the document
-            keyword = chart_data_label.removeprefix("project.").removesuffix("_rt")
-            chart_data = docx_context["totals"][chart_data_label]
+            keyword = chart_data_label.removesuffix("_rt")
 
-            par = _get_paragraph_of_variable(word_doc, chart_tag)
+            par = _get_paragraph_of_variable(word_doc, f"project.{chart_tag}")
             if par:
                 _build_report_bar_chart(par, keyword, project_id, chart_data)
 

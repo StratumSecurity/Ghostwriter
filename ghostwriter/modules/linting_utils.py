@@ -491,9 +491,21 @@ LINTER_CONTEXT = {
         "scope": 6,
         "team": 2,
         "targets": 1,
-        "chart_data": {"Test": 2},
-        "chart_data_internal": {"Test": 2},
-        "chart_data_external": {"Test": 2},
+        "chart_data": {
+            "Injection": {
+                "total": 4,
+                "weight": 4,
+                "severity": {
+                    "critical": 0,
+                    "high": 0,
+                    "medium": 0,
+                    "low": 0,
+                    "info": 4
+                }
+            }
+        },
+        "chart_data_internal": {},
+        "chart_data_external": {},
         "report_grade_appsec": "A",
         "average_grade_appsec": "B",
         "report_grade_wireless": "A",
