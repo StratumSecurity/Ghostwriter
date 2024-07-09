@@ -107,8 +107,6 @@ class ExportReportBase(ExportBase):
             finding_status = finding["network_detection_techniques"]
             if finding_status:
                 finding["network_detection_techniques_rt"] = self._severity_rich_text(finding_status, get_value_from_key(FindingStatusColor, finding_status))
-
-            finding["network_detection_techniques_rt"] = finding_render("the network detection techniques section", finding["network_detection_techniques"])
             finding["references_rt"] = finding_render("the references section", finding["references"])
 
         # Observations
