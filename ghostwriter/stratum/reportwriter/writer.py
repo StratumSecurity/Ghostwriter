@@ -2,7 +2,6 @@ import os
 
 from django.conf import settings
 from docxtpl import InlineImage
-from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Inches
 from string import ascii_letters
 from stratum.findings_chart import plt, build_bar_chart
@@ -38,9 +37,7 @@ def _add_image(word_doc, fig, filepath, pad=0.1, image_width=None, image_height=
     # For example, we only care about setting the figure height to a specific value
     # but don't care about the width of the image
     # Need to return inline image to add to the context to add to the document
-    return InlineImage(
-        word_doc, filepath, width=width, height=height, align=WD_ALIGN_PARAGRAPH.LEFT
-    )
+    return InlineImage(word_doc, filepath, width=width, height=height)
 
 
 def _build_report_bar_chart(word_doc, keyword, project_id, chart_data):
