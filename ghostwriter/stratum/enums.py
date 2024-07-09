@@ -61,10 +61,16 @@ class GradeColor(Enum):
     F = "C00000"
 
 
+def strip_html(value):
+    # This is needed for the finding status since it's a text field
+    # Strip HTML tags from UI data that get added by TinyMCE
+    soup = BeautifulSoup(value, "html.parser")
+    return soup.get_text()
+
+
 def get_value_from_key(e, key):
     # Strip HTML tags from UI data that get added by TinyMCE
-    soup = BeautifulSoup(key, "html.parser")
-    key = soup.get_text()
+    key = strip_html(key)
     for item in e:
         if item.value[0].lower() == key.lower():
             return item.value[1]

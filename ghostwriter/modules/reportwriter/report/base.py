@@ -16,7 +16,7 @@ from ghostwriter.oplog.models import OplogEntry
 from ghostwriter.reporting.models import Finding, Observation, Report
 from ghostwriter.rolodex.models import Client, Project
 from ghostwriter.shepherd.models import Domain, StaticServer
-from stratum.enums import FindingStatusColor, get_value_from_key
+from stratum.enums import FindingStatusColor, get_value_from_key, strip_html
 from stratum.reportwriter.writer import get_grade_labels
 from stratum.reportwriter.jinja_funcs import get_color_by_grade
 
@@ -103,9 +103,10 @@ class ExportReportBase(ExportBase):
 
             # Finding Status field for retests but might not always be populated.
             # We haven't been using GW for retests.
-            # TODO Maybe migrate away from this to extra fields for Finding Status?
+            # TODO Maybe migrate away from this to extra fields for Finding Status as a dropdown of values?
             finding_status = finding["network_detection_techniques"]
             if finding_status:
+                finding_status = strip_html(finding_status)
                 finding["network_detection_techniques_rt"] = self._severity_rich_text(finding_status, get_value_from_key(FindingStatusColor, finding_status))
             finding["references_rt"] = finding_render("the references section", finding["references"])
 
