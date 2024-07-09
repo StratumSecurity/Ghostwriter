@@ -1,6 +1,7 @@
 import os
 
 from django.conf import settings
+from docxtpl import InlineImage
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Inches
 from string import ascii_letters
@@ -20,27 +21,29 @@ def _get_filepath(evidence_directory, filename):
     return f"{evidence_directory}/{new_file_name}.png"
 
 
-def _add_image(par, fig, filepath, pad=0.1, image_width=None, image_height=None):
+def _add_image(word_doc, fig, filepath, pad=0.1, image_width=None, image_height=None):
     # Save the figure as a png to the file system under the report directory to be saved into the report
     fig.savefig(filepath, pad_inches=pad, bbox_inches="tight", dpi=fig.get_dpi())
 
     # Replace figure in report with saved image
     # Use the filename as a label for replacing the text with the image
-    run = par.add_run()
     width = Inches(image_width) if image_width else None
     height = Inches(image_height) if image_height else None
+
+    # Close the current figure window to clear up memory
+    plt.close(fig)
 
     # The image_width and image_height are separate if we want to change the image
     # dimensions but not the figure
     # For example, we only care about setting the figure height to a specific value
     # but don't care about the width of the image
-    run.add_picture(filepath, width=width, height=height)
-    # Close the current figure window to clear up memory
-    plt.close(fig)
+    # Need to return inline image to add to the context to add to the document
+    return InlineImage(
+        word_doc, filepath, width=width, height=height, align=WD_ALIGN_PARAGRAPH.LEFT
+    )
 
 
-def _build_report_bar_chart(par, keyword, project_id, chart_data):
-    par.alignment = WD_ALIGN_PARAGRAPH.LEFT
+def _build_report_bar_chart(word_doc, keyword, project_id, chart_data):
     fig = build_bar_chart(chart_data)
 
     # Only add image if we have data, None is returned when we don't have any findings
@@ -55,24 +58,13 @@ def _build_report_bar_chart(par, keyword, project_id, chart_data):
             fig_height -= 0.8
         evidence_directory = f"{settings.MEDIA_ROOT}/evidence/{project_id}"
         filepath = _get_filepath(evidence_directory, keyword)
-        _add_image(
-            par,
+        return _add_image(
+            word_doc,
             fig,
             filepath,
             image_width=fig.get_figwidth() - 3,
             image_height=fig_height,
         )
-
-
-def _get_paragraph_of_variable(word_doc, variable_name):
-    # Iterate through all paragraphs in the document
-    for paragraph in word_doc.paragraphs:
-        # Check if the variable is in the paragraph's text
-        if variable_name in paragraph.text:
-            return paragraph
-
-    # If the variable is not found in any paragraph
-    return None
 
 
 def build_report_bar_chart(word_doc, docx_context):
@@ -85,6 +77,8 @@ def build_report_bar_chart(word_doc, docx_context):
         ("chart_bar_external_rt", "chart_data_external"),
         ("chart_bar_internal_rt", "chart_data_internal"),
     ]
+    # Netsec reports will have two entries, while the rest is one
+    images = []
 
     for chart_tag, chart_data_label in chart_tag_mappings:
         # Only generate the chart if there is chart data
@@ -94,10 +88,11 @@ def build_report_bar_chart(word_doc, docx_context):
             # Get chart data from context
             # Build the report chart to add to the document
             keyword = chart_tag.removesuffix("_rt")
+            image = _build_report_bar_chart(word_doc, keyword, project_id, chart_data)
 
-            par = _get_paragraph_of_variable(word_doc, f"project.{chart_tag}")
-            if par:
-                _build_report_bar_chart(par, keyword, project_id, chart_data)
+            if image:
+                images.append((chart_tag, image))
+    return images
 
 
 def get_grade_labels():
