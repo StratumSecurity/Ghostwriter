@@ -53,7 +53,7 @@ def _build_report_bar_chart(par, keyword, project_id, chart_data):
         fig_height = fig.get_figheight()
         if fig_height > 2:
             fig_height -= 0.8
-        evidence_directory = f"{settings.MEDIA_ROOT}/evidence/${project_id}"
+        evidence_directory = f"{settings.MEDIA_ROOT}/evidence/{project_id}"
         filepath = _get_filepath(evidence_directory, keyword)
         _add_image(
             par,
