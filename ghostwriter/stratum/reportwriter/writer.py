@@ -93,7 +93,7 @@ def build_report_bar_chart(word_doc, docx_context):
         if chart_data and docx_context["project"][chart_tag]:
             # Get chart data from context
             # Build the report chart to add to the document
-            keyword = chart_data_label.removesuffix("_rt")
+            keyword = chart_tag.removesuffix("_rt")
 
             par = _get_paragraph_of_variable(word_doc, f"project.{chart_tag}")
             if par:
