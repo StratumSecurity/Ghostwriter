@@ -13,9 +13,9 @@ class Severity(Enum):
 
 
 class FindingStatusColor(Enum):
-    OPEN = ("OPEN", "#F0582B")
-    CLOSED = ("CLOSED", "#8BC53F")
-    ACCEPTED = ("ACCEPTED", "#4E81BD")
+    OPEN = ("OPEN", "F0582B")
+    CLOSED = ("CLOSED", "8BC53F")
+    ACCEPTED = ("ACCEPTED", "4E81BD")
 
 
 class Service(Enum):
