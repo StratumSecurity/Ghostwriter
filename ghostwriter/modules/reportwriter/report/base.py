@@ -110,15 +110,13 @@ class ExportReportBase(ExportBase):
                 finding["network_detection_techniques_rt"] = self._severity_rich_text(finding_status, get_value_from_key(FindingStatusColor, finding_status))
             finding["references_rt"] = finding_render("the references section", finding["references"])
 
+            self.process_extra_fields(f"finding {finding['title']}", finding["extra_fields"], Finding, finding_rich_text_context)
+
         # Observations
         for observation in base_context["observations"]:
             if observation["description"]:
                 observation["description_rt"] = self.create_lazy_template(f"the description of observation {observation['title']}", observation["description"], rich_text_context)
             self.process_extra_fields(f"observation {observation['title']}", observation["extra_fields"], Observation, rich_text_context)
-
-        # Project
-        base_context["project"]["note_rt"] = self.create_lazy_template("the project note", base_context["project"]["note"], rich_text_context)
-        self.process_extra_fields("the project", base_context["project"]["extra_fields"], Project, rich_text_context)
 
         # Bar Charts
         base_context["project"]["chart_bar_rt"] = self.create_lazy_template("the report bar chart", "<p></p>", rich_text_context)

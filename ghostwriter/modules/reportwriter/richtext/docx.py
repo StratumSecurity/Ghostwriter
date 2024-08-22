@@ -106,7 +106,18 @@ class HtmlToDocx(BaseHtmlToOOXML):
     def _tag_h(self, el, **kwargs):
         heading_num = int(el.name[1:])
         self.text_tracking.new_block()
-        self.doc.add_heading(el.text, heading_num)
+        heading_paragraph = self.doc.add_heading(el.text, heading_num)
+        if "id" in el.attrs:
+            run = heading_paragraph.runs[0]
+            tag = run._r
+            start = docx.oxml.shared.OxmlElement("w:bookmarkStart")
+            start.set(docx.oxml.ns.qn("w:id"), "0")
+            start.set(docx.oxml.ns.qn("w:name"), el.attrs["id"])
+            tag.append(start)
+            end = docx.oxml.shared.OxmlElement("w:bookmarkEnd")
+            end.set(docx.oxml.ns.qn("w:id"), "0")
+            end.set(docx.oxml.ns.qn("w:name"), el.attrs["id"])
+            tag.append(end)
 
     tag_h1 = _tag_h
     tag_h2 = _tag_h
@@ -147,12 +158,25 @@ class HtmlToDocx(BaseHtmlToOOXML):
             par = self.doc.add_paragraph()
 
         par.alignment = WD_ALIGN_PARAGRAPH.LEFT
-        run = par.add_run(el.get_text())
+
+        if len(el.contents) == 1 and el.contents[0].name == "code":
+            content_el = el.contents[0]
+        else:
+            content_el = el
+
+        self.text_tracking.new_block()
+        self.text_tracking.in_pre = True
+        try:
+            self.process_children(content_el, par=par, **kwargs)
+        finally:
+            self.text_tracking.in_pre = False
+
         try:
             par.style = "CodeBlock"
         except KeyError:
-            font = run.font
-            font.name = "Courier New"
+            for run in par.runs:
+                run.font.name = "Courier New"
+                run.font.no_proof = True
 
     def tag_ul(self, el, *, par=None, list_level=None, list_tracking=None, **kwargs):
         if list_tracking is None:
@@ -263,6 +287,7 @@ class HtmlToDocxWithEvidence(HtmlToDocx):
         self.title_case_captions = title_case_captions
         self.title_case_exceptions = title_case_exceptions
         self.border_color_width = border_color_width
+        self.plural_acronym_pattern = re.compile(r"^[^a-z]+(:?s|'s)$")
 
     def text(self, el, *, par=None, **kwargs):
         if par is not None and getattr(par, "_gw_is_caption", False):
@@ -288,9 +313,15 @@ class HtmlToDocxWithEvidence(HtmlToDocx):
         else:
             super().tag_span(el, par=par, **kwargs)
 
+    def is_plural_acronym(self, word):
+        """
+        Check if a word is an all caps acronym that ends with "s" or "'s".
+        """
+        return re.match(self.plural_acronym_pattern, word)
+
     def title_except(self, s):
         """
-        Title case the given string except for articles and words in the provided exceptions list.
+        Title case the given string except for articles and words in the provided exceptions list and words in all caps.
 
         Ref: https://stackoverflow.com/a/3729957
         """
@@ -299,7 +330,9 @@ class HtmlToDocxWithEvidence(HtmlToDocx):
             final = [word_list[0].capitalize()]
             for word in word_list[1:]:
                 final.append(
-                    word if word in self.title_case_exceptions else word.capitalize()
+                    word
+                    if word in self.title_case_exceptions or word.isupper() or self.is_plural_acronym(word)
+                    else word.capitalize()
                 )
             s = " ".join(final)
         return s
@@ -446,9 +479,7 @@ class HtmlToDocxWithEvidence(HtmlToDocx):
         run = par.add_run()
         r = run._r
         instrText = OxmlElement("w:instrText")
-        instrText.text = ' REF "_Ref{}" \\h '.format(
-            ref.replace("\\", "\\\\").replace('"', '\\"')
-        )
+        instrText.text = ' REF "_Ref{}" \\h '.format(ref.replace("\\", "\\\\").replace('"', '\\"'))
         r.append(instrText)
 
         # An optional ``separate`` value to enforce a space between label and number
@@ -574,7 +605,6 @@ class ListTracking:
             cache[level_list_is_ordered] = numbering_id
 
         for par, level in self.paragraphs:
-            par._p.get_or_add_pPr().get_or_add_numPr().get_or_add_numId().val = (
-                numbering_id
-            )
+            par.style = "ListParagraph"
+            par._p.get_or_add_pPr().get_or_add_numPr().get_or_add_numId().val = numbering_id
             par._p.get_or_add_pPr().get_or_add_numPr().get_or_add_ilvl().val = level
