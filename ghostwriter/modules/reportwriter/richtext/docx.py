@@ -251,9 +251,15 @@ class HtmlToDocx(BaseHtmlToOOXML):
                 "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}type"
             ] = "auto"
             for row_idx, _ in enumerate(self.doc.tables[t_idx].rows):
-                for cell_idx, _ in enumerate(self.doc.tables[t_idx].rows[row_idx].cells):
-                    self.doc.tables[t_idx].rows[row_idx].cells[cell_idx]._tc.tcPr.tcW.type = "auto"
-                    self.doc.tables[t_idx].rows[row_idx].cells[cell_idx]._tc.tcPr.tcW.w = 0
+                for cell_idx, _ in enumerate(
+                    self.doc.tables[t_idx].rows[row_idx].cells
+                ):
+                    self.doc.tables[t_idx].rows[row_idx].cells[
+                        cell_idx
+                    ]._tc.tcPr.tcW.type = "auto"
+                    self.doc.tables[t_idx].rows[row_idx].cells[
+                        cell_idx
+                    ]._tc.tcPr.tcW.w = 0
         return self.doc
 
 
@@ -407,6 +413,10 @@ class HtmlToDocxWithEvidence(HtmlToDocx):
         elif extension in IMAGE_EXTENSIONS:
             par.alignment = WD_ALIGN_PARAGRAPH.CENTER
             run = par.add_run()
+
+            # Add space point before the image to not overlap onto the table header
+            par.paragraph_format.space_before = Pt(8)
+
             try:
                 run.add_picture(file_path, width=Inches(6.5))
             except UnrecognizedImageError as e:
@@ -503,7 +513,9 @@ class ListTracking:
 
     @staticmethod
     def q_w(tag):
-        return etree.QName("http://schemas.openxmlformats.org/wordprocessingml/2006/main", tag)
+        return etree.QName(
+            "http://schemas.openxmlformats.org/wordprocessingml/2006/main", tag
+        )
 
     def add_paragraph(self, pg, level: int, is_ordered: bool):
         """
@@ -511,7 +523,9 @@ class ListTracking:
         """
         if level > len(self.level_list_is_ordered):
             raise Exception(
-                "Tried to add level {} to a list with {} existing levels".format(level, len(self.level_list_is_ordered))
+                "Tried to add level {} to a list with {} existing levels".format(
+                    level, len(self.level_list_is_ordered)
+                )
             )
         if level == len(self.level_list_is_ordered):
             self.level_list_is_ordered.append(is_ordered)
@@ -537,9 +551,13 @@ class ListTracking:
             abstract_numbering_id = last_used_id + 1
 
             abstract_numbering = numbering.makeelement(self.q_w("abstractNum"))
-            abstract_numbering.set(self.q_w("abstractNumId"), str(abstract_numbering_id))
+            abstract_numbering.set(
+                self.q_w("abstractNumId"), str(abstract_numbering_id)
+            )
 
-            multi_level_type = abstract_numbering.makeelement(self.q_w("multiLevelType"))
+            multi_level_type = abstract_numbering.makeelement(
+                self.q_w("multiLevelType")
+            )
             multi_level_type.set(self.q_w("val"), "hybridMultilevel")
             abstract_numbering.append(multi_level_type)
 

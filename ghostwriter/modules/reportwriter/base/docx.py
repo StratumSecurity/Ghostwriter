@@ -19,6 +19,7 @@ from ghostwriter.modules.reportwriter.base.html_rich_text import (
     deep_copy_with_copiers,
 )
 from ghostwriter.modules.reportwriter.richtext.docx import HtmlToDocxWithEvidence
+from ghostwriter.stratum.reportwriter.writer import build_report_bar_chart
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +64,15 @@ class ExportDocxBase(ExportBase):
     def extension(cls) -> str:
         return "docx"
 
-    def __init__(self, object, *, template_loc: str, p_style: str | None, linting: bool = False, **kwargs):
+    def __init__(
+        self,
+        object,
+        *,
+        template_loc: str,
+        p_style: str | None,
+        linting: bool = False,
+        **kwargs,
+    ):
         if "jinja_debug" not in kwargs:
             kwargs["jinja_debug"] = linting
         super().__init__(object, **kwargs)
@@ -74,10 +83,16 @@ class ExportDocxBase(ExportBase):
         try:
             self.word_doc = DocxTemplate(template_loc)
         except PackageNotFoundError as err:
-            logger.exception("Failed to load the provided template document: %s", template_loc)
-            raise ReportExportError("Template document file could not be found - try re-uploading it") from err
+            logger.exception(
+                "Failed to load the provided template document: %s", template_loc
+            )
+            raise ReportExportError(
+                "Template document file could not be found - try re-uploading it"
+            ) from err
         except Exception:
-            logger.exception("Failed to load the provided template document: %s", template_loc)
+            logger.exception(
+                "Failed to load the provided template document: %s", template_loc
+            )
             raise
 
         global_report_config = ReportConfiguration.get_solo()
@@ -94,7 +109,9 @@ class ExportDocxBase(ExportBase):
         label_figure = global_report_config.label_figure
         self.label_figure = f"{label_figure}"
         self.title_case_captions = global_report_config.title_case_captions
-        self.title_case_exceptions = global_report_config.title_case_exceptions.split(",")
+        self.title_case_exceptions = global_report_config.title_case_exceptions.split(
+            ","
+        )
 
     def run(self) -> io.BytesIO:
         self.create_styles()
@@ -109,21 +126,34 @@ class ExportDocxBase(ExportBase):
         )
 
         try:
+            # Custom code needed to add bar chart and the data to the document
+            images = build_report_bar_chart(self.word_doc, docx_context)
+
+            for tag, image in images:
+                docx_context["project"][tag] = image
+
             ReportExportError.map_jinja2_render_errors(
-                lambda: self.word_doc.render(docx_context, self.jinja_env, autoescape=True), "the DOCX template"
+                lambda: self.word_doc.render(
+                    docx_context, self.jinja_env, autoescape=True
+                ),
+                "the DOCX template",
             )
             ReportExportError.map_jinja2_render_errors(
                 lambda: self.render_properties(docx_context), "the DOCX properties"
             )
         except UnrecognizedImageError as err:
-            raise ReportExportError(f"Could not load an image: {err}", "the DOCX template") from err
+            raise ReportExportError(
+                f"Could not load an image: {err}", "the DOCX template"
+            ) from err
         except PackageNotFoundError as err:
             raise ReportExportError(
-                "The word template could not be found on the server – try uploading it again.", "the DOCX template"
+                "The word template could not be found on the server – try uploading it again.",
+                "the DOCX template",
             ) from err
         except FileNotFoundError as err:
             raise ReportExportError(
-                "An evidence file was missing – try uploading it again.", "the DOCX template"
+                "An evidence file was missing – try uploading it again.",
+                "the DOCX template",
             ) from err
 
         out = io.BytesIO()
@@ -214,7 +244,8 @@ class ExportDocxBase(ExportBase):
                 continue
 
             out = ReportExportError.map_jinja2_render_errors(
-                lambda: self.jinja_env.from_string(template_src).render(context), f"DOCX property {attr}"
+                lambda: self.jinja_env.from_string(template_src).render(context),
+                f"DOCX property {attr}",
             )
             setattr(self.word_doc.core_properties, attr, out)
 
@@ -233,7 +264,11 @@ class ExportDocxBase(ExportBase):
                 figure_prefix=self.prefix_figure,
                 title_case_captions=self.title_case_captions,
                 title_case_exceptions=self.title_case_exceptions,
-                border_color_width=(self.border_color, self.border_weight) if self.enable_borders else None,
+                border_color_width=(
+                    (self.border_color, self.border_weight)
+                    if self.enable_borders
+                    else None
+                ),
             ),
             getattr(rich_text, "location", None),
         )
@@ -272,7 +307,9 @@ class ExportDocxBase(ExportBase):
             )
             for variable in undeclared_variables:
                 if variable not in lint_data:
-                    warnings.append("Potential undefined variable: {!r}".format(variable))
+                    warnings.append(
+                        "Potential undefined variable: {!r}".format(variable)
+                    )
 
             document_styles = exporter.word_doc.styles
             for style in EXPECTED_STYLES:
