@@ -51,6 +51,8 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - REDIS_URL=redis://${REDIS_HOST}:${REDIS_PORT}/0
       - WEB_CONCURRENCY=${DJANGO_WEB_CONCURRENCY}
+      - SSO_TENANT_ID=${SSO_TENANT_ID}
+      - SSO_CLIENT_ID=${SSO_CLIENT_ID}
     healthcheck:
       test: curl --insecure --fail https://nginx/status/simple/ || exit 1
       interval: ${HEALTHCHECK_INTERVAL}
