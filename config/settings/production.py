@@ -165,3 +165,10 @@ LOGGING = {
 
 # Your stuff...
 # ------------------------------------------------------------------------------
+INSTALLED_APPS = ["allauth.socialaccount.providers.microsoft"] + INSTALLED_APPS
+SOCIALACCOUNT_PROVIDERS = {
+    "microsoft": {
+        "TENANT": env("SSO_TENANT_ID"),
+        "client_id": env("SSO_CLIENT_ID"),
+    }
+}
