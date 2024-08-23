@@ -80,8 +80,8 @@ def build_report_bar_chart(word_doc, docx_context):
     for chart_tag, chart_data_label in chart_tag_mappings:
         # Only generate the chart if there is chart data
         # This is needed as we only need to iterate once when it's not netsec reports
-        chart_data = docx_context["totals"][chart_data_label]
-        if chart_data and docx_context["project"][chart_tag]:
+        chart_data = docx_context["totals"].get(chart_data_label)
+        if chart_data and docx_context["project"].get(chart_tag):
             # Get chart data from context
             # Build the report chart to add to the document
             keyword = chart_tag.removesuffix("_rt")
