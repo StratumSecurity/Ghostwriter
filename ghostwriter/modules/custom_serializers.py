@@ -1050,10 +1050,12 @@ class ReportDataSerializer(CustomModelSerializer):
                     )
 
                 rep["totals"][chart_label] = chart_data
-                rep["totals"][f"report_grade_{name}"] = grade
-                rep["totals"][f"average_grade_{name}"] = calculate_average_grade(
-                    finding_types, project_start_date
-                )
+                rep["totals"]["grades"] = {
+                    f"report_grade_{name}": grade,
+                    f"average_grade_{name}": calculate_average_grade(
+                        finding_types, project_start_date
+                    ),
+                }
 
         return rep
 
