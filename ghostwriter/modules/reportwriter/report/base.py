@@ -17,7 +17,7 @@ from ghostwriter.reporting.models import Finding, Observation, Report
 from ghostwriter.rolodex.models import Client, Project
 from ghostwriter.shepherd.models import Domain, StaticServer
 from stratum.enums import FindingStatusColor, get_value_from_key, strip_html
-from stratum.reportwriter.writer import get_grade_labels
+from stratum.reportwriter.writer import get_grades_from_context
 from stratum.reportwriter.jinja_funcs import get_color_by_grade
 
 class ExportReportBase(ExportBase):
@@ -124,8 +124,7 @@ class ExportReportBase(ExportBase):
         base_context["project"]["chart_bar_internal_rt"] = self.create_lazy_template("the report bar chart", "<p></p>", rich_text_context)
 
         # Need to register rich text tags for grades in order
-        for grade_label in get_grade_labels():
-            grade = base_context["totals"].get(grade_label)
+        for grade_label, grade in get_grades_from_context(base_context):
             if grade:
                 base_context["project"][f"{grade_label}_rt"] = self._severity_rich_text(grade, get_color_by_grade(grade))
 

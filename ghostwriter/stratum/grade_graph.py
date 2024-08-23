@@ -2,7 +2,7 @@ from datetime import timedelta
 from itertools import groupby
 
 from ghostwriter.reporting.models import ReportFindingLink
-from .enums import Grade, Severity, Service
+from .enums import Grade, Severity
 
 
 def _get_grade(score):
@@ -57,16 +57,41 @@ def _calculate_grade(findings, func, field="severity"):
     )
 
 
+def get_services(findings):
+    # This is needed to loop through each finding type for the grade calculation
+    # For appsec we group the finding types together
+    # e.g. [{'appsec': ['Web', 'Mobile', 'Code Review']}, {'azure': ['Azure']}, ...]
+    unique_types = set(finding["finding_type"].lower() for finding in findings)
+
+    # Add appsec category with hardcoded values
+    appsec_type = "appsec"
+    appsec_categories = ["Web".lower(), "Mobile".lower(), "Code Review".lower()]
+    appsec_categories_capitalized = [
+        category.capitalize() for category in appsec_categories
+    ]
+    finding_types = []
+    if any(type_key in appsec_categories for type_key in unique_types):
+        finding_types.append({appsec_type: appsec_categories_capitalized})
+
+    # Add other types with their own categories
+    for type_key in unique_types:
+        type_key_capitalized = type_key.capitalize()  # Preserve original casing
+        if type_key not in appsec_categories:
+            # Avoid duplicates
+            if not any(d.get(type_key_capitalized) for d in finding_types):
+                finding_types.append(
+                    {type_key_capitalized.lower(): [type_key_capitalized]}
+                )
+    return finding_types
+
+
 def calculate_grade_by_findings(findings):
     # Returns the grade letter
     return _calculate_grade(findings, calculate_grade)
 
 
-def calculate_average_grade(service, project_start_date):
+def calculate_average_grade(finding_types, project_start_date):
     one_year_ago = project_start_date - timedelta(days=365)
-
-    # For appsec we need to map code review, mobile, and web
-    finding_types = Service.get_finding_type(service)
 
     findings = (
         ReportFindingLink.objects.filter(report__delivered__exact=True)

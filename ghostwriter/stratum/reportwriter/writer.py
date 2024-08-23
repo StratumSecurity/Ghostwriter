@@ -4,7 +4,6 @@ from django.conf import settings
 from docx.shared import Inches
 from string import ascii_letters
 from stratum.findings_chart import plt, build_bar_chart
-from stratum.enums import Service
 
 
 def _get_filepath(evidence_directory, filename):
@@ -93,9 +92,6 @@ def build_report_bar_chart(word_doc, docx_context):
     return images
 
 
-def get_grade_labels():
-    grade_labels = []
-    for label in ["report", "average"]:
-        for service in [member.value for member in Service]:
-            grade_labels.append(f"{label}_grade_{service}")
-    return grade_labels
+def get_grades_from_context(docx_context):
+    grades = docx_context["totals"]["grades"]
+    return [(key, value) for key, value in grades.items()]

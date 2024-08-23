@@ -18,26 +18,6 @@ class FindingStatusColor(Enum):
     ACCEPTED = ("ACCEPTED", "4E81BD")
 
 
-class Service(Enum):
-    APPSEC = "appsec"
-    CLOUD = "cloud"
-    EXTERNAL = "external"
-    INTERNAL = "internal"
-    PHYSICAL = "physical"
-    WIRELESS = "wireless"
-
-    @classmethod
-    def get_finding_type(cls, service):
-        try:
-            if cls.APPSEC.value == service:
-                return ["Web", "Mobile", "Code Review"]
-            else:
-                # upper() is needed for the key to be found
-                return [cls[service.upper()].value.title()]
-        except KeyError:
-            return None
-
-
 class Grade(Enum):
     A = 90
     B = 80

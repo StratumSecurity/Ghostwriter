@@ -54,12 +54,13 @@ from ghostwriter.shepherd.models import (
     StaticServer,
     TransientServer,
 )
-from ghostwriter.stratum.enums import Service, Severity
+from ghostwriter.stratum.enums import Severity
 from ghostwriter.stratum.findings_chart import format_chart_data
 from ghostwriter.stratum.grade_graph import (
     calculate_grade,
     calculate_grade_by_findings,
     calculate_average_grade,
+    get_services,
 )
 from ghostwriter.users.models import User
 
@@ -1020,66 +1021,38 @@ class ReportDataSerializer(CustomModelSerializer):
         def _get_findings_by_type(findings, type):
             return list(
                 filter(
-                    lambda finding: finding["finding_type"].lower() == type, findings
+                    lambda finding: finding["finding_type"].lower() == type.lower(),
+                    findings,
                 )
             )
 
-        netsec_internal_findings = _get_findings_by_type(
-            findings, Service.INTERNAL.value
-        )
-        netsec_external_findings = _get_findings_by_type(
-            findings, Service.EXTERNAL.value
-        )
+        # For each service, generate the bar chart(s) and grade calculations
+        # Netsec combo reports are handled and appsec (web, mobile, code review) is grouped together
+        for service in get_services(findings):
+            for name, finding_types in service.items():
+                chart_label = "chart_data"
 
-        # Bar chart data for tags
-        rep["totals"]["chart_data"] = format_chart_data(findings)
+                # The condition check is needed for the netsec combo reports
+                if name.lower() == "internal":
+                    netsec_internal_findings = _get_findings_by_type(findings, name)
+                    chart_data = format_chart_data(netsec_internal_findings)
+                    chart_label = f"chart_data_{name}"
+                    grade = calculate_grade_by_findings(netsec_internal_findings)
+                elif name.lower() == "external":
+                    netsec_external_findings = _get_findings_by_type(findings, name)
+                    chart_data = format_chart_data(netsec_external_findings)
+                    chart_label = f"chart_data_{name}"
+                    grade = calculate_grade_by_findings(netsec_external_findings)
+                else:
+                    chart_data = format_chart_data(findings)
+                    grade = calculate_grade(
+                        critical_findings, high_findings, medium_findings, low_findings
+                    )
 
-        # Check if there are any netsec findings, GW will hit this on report generation
-        # for appsec reports where both are empty arrays and throw an error on report generation
-        # Use all findings marked in report for these values in those cases
-        rep["totals"]["chart_data_internal"] = format_chart_data(
-            netsec_internal_findings if netsec_internal_findings else {}
-        )
-        rep["totals"]["chart_data_external"] = format_chart_data(
-            netsec_external_findings if netsec_external_findings else {}
-        )
-
-        # Look at lint utils for field names under totals
-        # Calculate the current grades for each service; only current report findings,
-        # and external/internal separately for combo report
-        grade = calculate_grade(
-            critical_findings, high_findings, medium_findings, low_findings
-        )
-        for service in [member.value for member in Service]:
-            rep["totals"][f"report_grade_{service}"] = grade
-
-            # The below is needed for the netsec combo reports
-            if netsec_external_findings:
-                # Calculate the grade for netsec external findings
-                s = Service.EXTERNAL.value.lower()
-                rep["totals"][f"report_grade_{s}"] = calculate_grade_by_findings(
-                    netsec_external_findings
-                )
-                rep["totals"][f"average_grade_{s}"] = calculate_average_grade(
-                    s, project_start_date
-                )
-
-            if netsec_internal_findings:
-                # Calculate the grade for netsec internal findings
-                s = Service.INTERNAL.value.lower()
-                rep["totals"][f"report_grade_{s}"] = calculate_grade_by_findings(
-                    netsec_internal_findings
-                )
-                rep["totals"][f"average_grade_{s}"] = calculate_average_grade(
-                    s, project_start_date
-                )
-
-            if not netsec_external_findings and not netsec_internal_findings:
-                # Calculate the average for any other service
-                # We do this here because we want to make sure we don't do a
-                # second database hit unless it's a combo report
-                rep["totals"][f"average_grade_{service}"] = calculate_average_grade(
-                    service, project_start_date
+                rep["totals"][chart_label] = chart_data
+                rep["totals"][f"report_grade_{name}"] = grade
+                rep["totals"][f"average_grade_{name}"] = calculate_average_grade(
+                    finding_types, project_start_date
                 )
 
         return rep
