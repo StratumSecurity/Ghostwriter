@@ -1050,12 +1050,12 @@ class ReportDataSerializer(CustomModelSerializer):
                     )
 
                 rep["totals"][chart_label] = chart_data
-                rep["totals"]["grades"] = {
-                    f"report_grade_{name}": grade,
-                    f"average_grade_{name}": calculate_average_grade(
-                        finding_types, project_start_date
-                    ),
-                }
+                avg_grade = calculate_average_grade(finding_types, project_start_date)
+
+                # Defaulting to {} as Netsec combo report needs to append
+                grades = rep["totals"].setdefault("grades", {})
+                grades[f"report_grade_{name}"] = grade
+                grades[f"average_grade_{name}"] = avg_grade
 
         return rep
 
