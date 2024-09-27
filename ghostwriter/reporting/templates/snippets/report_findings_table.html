@@ -49,7 +49,7 @@
     {% group_by_severity report.reportfindinglink_set.all as severity_groups %}
     {% for group, values in severity_groups.items %}
       <tbody>
-      <th id="{{ values.tpl_name }}_header" class="severity-header {{ values.tpl_name }}" colspan="7"
+      <th id="{{ values.tpl_name }}_header" class="severity-header {{ values.tpl_name }}" colspan="9"
           scope="colgroup">{{ group }}</th>
       </tbody>
       <tbody id="{{ values.tpl_name }}_severity" class="sortable_list connected_sortable"
