@@ -85,6 +85,20 @@ class CustomModelSerializer(serializers.ModelSerializer):
                 self.fields.pop(field)
         super().__init__(*args, **kwargs)
 
+    def to_representation(self, instance):
+        """
+        Override the default method to ensure empty strings are returned for null values. The null values will
+        cause Jinja2 rendering errors with filters and expressions like `sort()`.
+        """
+        data = super().to_representation(instance)
+        for key, value in data.items():
+            try:
+                if not value:
+                    data[key] = ""
+            except KeyError:
+                pass
+        return data
+
 
 class OperatorNameField(RelatedField):
     """Customize the string representation of a :model:`users.User` entry."""
@@ -141,8 +155,8 @@ class ExtraFieldsSerField(serializers.Field):
         ):
             self.root_ser._extra_fields_specs = {}
         if self.model_name not in self.root_ser._extra_fields_specs:
-            self.root_ser._extra_fields_specs[self.model_name] = (
-                ExtraFieldSpec.objects.filter(target_model=self.model_name)
+            self.root_ser._extra_fields_specs[self.model_name] = ExtraFieldSpec.objects.filter(
+                target_model=self.model_name
             )
 
         # Populate output
@@ -588,9 +602,7 @@ class ServerHistorySerializer(CustomModelSerializer):
         exclude=["id", "project", "static_server", "transient_server"],
     )
 
-    extra_fields = ExtraFieldsSerField(
-        StaticServer._meta.label, source="server.extra_fields"
-    )
+    extra_fields = ExtraFieldsSerField(StaticServer._meta.label, source="server.extra_fields")
 
     class Meta:
         model = ServerHistory

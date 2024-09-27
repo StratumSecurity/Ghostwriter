@@ -59,6 +59,7 @@ def prepare_jinja2_env(debug=False):
     env.filters["get_item"] = jinja_funcs.get_item
     env.filters["regex_search"] = jinja_funcs.regex_search
     env.filters["filter_tags"] = jinja_funcs.filter_tags
+    env.filters["replace_blanks"] = jinja_funcs.replace_blanks
     env.filters["color_by_grade"] = stratum_jinja_funcs.get_color_by_grade
     env.filters["compare_grade"] = stratum_jinja_funcs.get_grade_comparison
 

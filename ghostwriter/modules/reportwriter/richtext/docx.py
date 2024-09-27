@@ -18,6 +18,7 @@ from docx.shared import RGBColor as DocxRgbColor
 from lxml import etree
 
 # Ghostwriter Libraries
+from ghostwriter.modules.reportwriter.base import ReportExportError
 from ghostwriter.modules.reportwriter.extensions import (
     IMAGE_EXTENSIONS,
     TEXT_EXTENSIONS,
@@ -39,7 +40,6 @@ class HtmlToDocx(BaseHtmlToOOXML):
         super().__init__()
         self.doc = doc
         self.p_style = p_style
-        self.list_styles_cache = {}
 
     def text(self, el, *, par=None, style={}, **kwargs):
         # Process hyperlinks on top of the usual text rules
@@ -70,7 +70,10 @@ class HtmlToDocx(BaseHtmlToOOXML):
             run._r.append(hyperlink)
             # A workaround for the lack of a hyperlink style
             if "Hyperlink" in self.doc.styles:
-                run.style = "Hyperlink"
+                try:
+                    run.style = "Hyperlink"
+                except KeyError:
+                    pass
             else:
                 run.font.color.theme_color = MSO_THEME_COLOR_INDEX.HYPERLINK
                 run.font.underline = True
@@ -80,7 +83,10 @@ class HtmlToDocx(BaseHtmlToOOXML):
     def style_run(self, run, style):
         super().style_run(run, style)
         if style.get("inline_code"):
-            run.style = "CodeInline"
+            try:
+                run.style = "CodeInline"
+            except KeyError:
+                pass
             run.font.no_proof = True
         if style.get("highlight"):
             run.font.highlight_color = WD_COLOR_INDEX.YELLOW
@@ -206,11 +212,11 @@ class HtmlToDocx(BaseHtmlToOOXML):
             )
 
         if this_list_level == 0:
-            list_tracking.create(self.doc, self.list_styles_cache)
+            list_tracking.create(self.doc)
 
     tag_ol = tag_ul
 
-    def tag_blockquote(self, el, **kwargs):
+    def tag_blockquote(self, el, par=None, **kwargs):
         # TODO: if done in a list, this won't preserve the level.
         # Not sure how to do that, since this requires a new paragraph.
         par = self.doc.add_paragraph()
@@ -303,7 +309,10 @@ class HtmlToDocxWithEvidence(HtmlToDocx):
             self.make_evidence(par, evidence)
         elif "data-gw-caption" in el.attrs:
             ref_name = el.attrs["data-gw-caption"]
-            par.style = "Caption"
+            try:
+                par.style = "Caption"
+            except KeyError:
+                pass
             par._gw_is_caption = True
             self.make_figure(par, ref_name or None)
         elif "data-gw-ref" in el.attrs:
@@ -399,8 +408,21 @@ class HtmlToDocxWithEvidence(HtmlToDocx):
 
         extension = file_path.split(".")[-1].lower()
         if extension in TEXT_EXTENSIONS:
-            with open(file_path, "r", encoding="utf-8") as evidence_file:
-                evidence_text = evidence_file.read()
+            try:
+                with open(file_path, "r", encoding="utf-8") as evidence_file:
+                    evidence_text = evidence_file.read()
+            except UnicodeDecodeError as err:
+                logger.exception(
+                    "Evidence file known as %s (%s) was not recognized as a %s file.",
+                    evidence["friendly_name"],
+                    file_path,
+                    extension,
+                )
+                error_msg = (
+                    f'The evidence file, `{evidence["friendly_name"]},` was not recognized as a UTF-8 encoded {extension} file. '
+                    "Try opening it, exporting as desired type, and re-uploading it."
+                )
+                raise ReportExportError(error_msg) from err
             par.text = evidence_text
             par.alignment = WD_ALIGN_PARAGRAPH.LEFT
             try:
@@ -430,7 +452,7 @@ class HtmlToDocxWithEvidence(HtmlToDocx):
                     f'The evidence file, `{evidence["friendly_name"]},` was not recognized as a {extension} file. '
                     "Try opening it, exporting as desired type, and re-uploading it."
                 )
-                raise UnrecognizedImageError(error_msg) from e
+                raise ReportExportError(error_msg) from e
 
             if self.border_color_width is not None:
                 border_color, border_width = self.border_color_width
@@ -531,80 +553,76 @@ class ListTracking:
             self.level_list_is_ordered.append(is_ordered)
         self.paragraphs.append((pg, level))
 
-    def create(self, doc, cache):
+    def create(self, doc):
         """
         Creates the numbering, if needed, and assigns it to each of the paragraphs registered by `add_paragraph`.
         """
-        # Finalize the list into a tuple, which is hashable.
-        # Technically an abuse of a tuple, but Python has no built-in immutable sequence types
-        level_list_is_ordered = tuple(self.level_list_is_ordered)
-        if level_list_is_ordered in cache:
-            # Re-use the numbering
-            numbering_id = cache[level_list_is_ordered]
-        else:
-            # Create a new numbering
+        level_list_is_ordered = self.level_list_is_ordered
+
+        # Create a new numbering
+        try:
             numbering = doc.part.numbering_part.numbering_definitions._numbering
-            last_used_id = max(
-                (int(id) for id in numbering.xpath("w:abstractNum/@w:abstractNumId")),
-                default=-1,
-            )
-            abstract_numbering_id = last_used_id + 1
+        except NotImplementedError as e:
+            raise ReportExportError("Tried to use a list in a template without list styles") from e
+        last_used_id = max(
+            (int(id) for id in numbering.xpath("w:abstractNum/@w:abstractNumId")),
+            default=-1,
+        )
+        abstract_numbering_id = last_used_id + 1
 
-            abstract_numbering = numbering.makeelement(self.q_w("abstractNum"))
-            abstract_numbering.set(
-                self.q_w("abstractNumId"), str(abstract_numbering_id)
-            )
+        abstract_numbering = numbering.makeelement(self.q_w("abstractNum"))
+        abstract_numbering.set(self.q_w("abstractNumId"), str(abstract_numbering_id))
 
-            multi_level_type = abstract_numbering.makeelement(
-                self.q_w("multiLevelType")
-            )
-            multi_level_type.set(self.q_w("val"), "hybridMultilevel")
-            abstract_numbering.append(multi_level_type)
+        multi_level_type = abstract_numbering.makeelement(self.q_w("multiLevelType"))
+        multi_level_type.set(self.q_w("val"), "hybridMultilevel")
+        abstract_numbering.append(multi_level_type)
 
-            for level_num, is_ordered in enumerate(level_list_is_ordered):
-                # TODO: vary bullets or numbers based on level
-                level = abstract_numbering.makeelement(self.q_w("lvl"))
-                level.set(self.q_w("ilvl"), str(level_num))
+        for level_num, is_ordered in enumerate(level_list_is_ordered):
+            # TODO: vary bullets or numbers based on level
+            level = abstract_numbering.makeelement(self.q_w("lvl"))
+            level.set(self.q_w("ilvl"), str(level_num))
 
-                start = level.makeelement(self.q_w("start"))
-                start.set(self.q_w("val"), "1")
-                level.append(start)
+            start = level.makeelement(self.q_w("start"))
+            start.set(self.q_w("val"), "1")
+            level.append(start)
 
-                num_fmt = level.makeelement(self.q_w("numFmt"))
-                lvl_text = level.makeelement(self.q_w("lvlText"))
-                if is_ordered:
-                    num_fmt.set(self.q_w("val"), "decimal")
-                    lvl_text.set(self.q_w("val"), "%{}.".format(level_num + 1))
-                else:
-                    num_fmt.set(self.q_w("val"), "bullet")
-                    lvl_text.set(self.q_w("val"), "")
-                    # lvl_text.set(self.q_w("val"), "X")
-                level.append(num_fmt)
-                level.append(lvl_text)
+            num_fmt = level.makeelement(self.q_w("numFmt"))
+            lvl_text = level.makeelement(self.q_w("lvlText"))
+            if is_ordered:
+                num_fmt.set(self.q_w("val"), "decimal")
+                lvl_text.set(self.q_w("val"), "%{}.".format(level_num + 1))
+            else:
+                num_fmt.set(self.q_w("val"), "bullet")
+                lvl_text.set(self.q_w("val"), "")
+                # lvl_text.set(self.q_w("val"), "X")
+            level.append(num_fmt)
+            level.append(lvl_text)
 
-                prp = level.makeelement(self.q_w("pPr"))
-                ind = prp.makeelement(self.q_w("ind"))
-                ind.set(self.q_w("left"), str((level_num + 1) * 720))
-                ind.set(self.q_w("hanging"), "360")
-                prp.append(ind)
-                level.append(prp)
+            prp = level.makeelement(self.q_w("pPr"))
+            ind = prp.makeelement(self.q_w("ind"))
+            ind.set(self.q_w("left"), str((level_num + 1) * 720))
+            ind.set(self.q_w("hanging"), "360")
+            prp.append(ind)
+            level.append(prp)
 
-                if not is_ordered:
-                    rpr = level.makeelement(self.q_w("rPr"))
-                    fonts = rpr.makeelement(self.q_w("rFonts"))
-                    fonts.set(self.q_w("ascii"), "Symbol")
-                    fonts.set(self.q_w("hAnsi"), "Symbol")
-                    fonts.set(self.q_w("hint"), "default")
-                    rpr.append(fonts)
-                    level.append(rpr)
+            if not is_ordered:
+                rpr = level.makeelement(self.q_w("rPr"))
+                fonts = rpr.makeelement(self.q_w("rFonts"))
+                fonts.set(self.q_w("ascii"), "Symbol")
+                fonts.set(self.q_w("hAnsi"), "Symbol")
+                fonts.set(self.q_w("hint"), "default")
+                rpr.append(fonts)
+                level.append(rpr)
 
-                abstract_numbering.append(level)
+            abstract_numbering.append(level)
 
-            numbering.insert(0, abstract_numbering)
-            numbering_id = numbering.add_num(abstract_numbering_id).numId
-            cache[level_list_is_ordered] = numbering_id
+        numbering.insert(0, abstract_numbering)
+        numbering_id = numbering.add_num(abstract_numbering_id).numId
 
         for par, level in self.paragraphs:
-            par.style = "ListParagraph"
+            try:
+                par.style = "ListParagraph"
+            except KeyError:
+                pass
             par._p.get_or_add_pPr().get_or_add_numPr().get_or_add_numId().val = numbering_id
             par._p.get_or_add_pPr().get_or_add_numPr().get_or_add_ilvl().val = level

@@ -39,6 +39,7 @@ from ghostwriter.commandcenter.models import (
     NamecheapConfiguration,
     VirusTotalConfiguration,
 )
+from ghostwriter.modules.shared import add_content_disposition_header
 from ghostwriter.rolodex.models import Client, Project
 from ghostwriter.shepherd.filters import DomainFilter, ServerFilter
 from ghostwriter.shepherd.forms import (
@@ -102,7 +103,11 @@ class AjaxLoadProjects(RoleBasedAccessControlMixin, View):
                 client = Client.objects.get(id=client_id)
                 if verify_access(request.user, client):
                     projects = get_project_list(request.user)
-                    projects = projects.filter(Q(client_id=client_id) & Q(complete=False)).order_by("codename")
+                    projects = (
+                        projects.filter(Q(client_id=client_id) & Q(complete=False))
+                        .order_by("codename")
+                        .defer("extra_fields")
+                    )
                     return render(request, "shepherd/project_dropdown_list.html", {"projects": projects})
                 return HttpResponse(status=403)
             except ValueError:
@@ -845,7 +850,7 @@ def export_domains_to_csv(request):
     domain_resource = DomainResource()
     dataset = domain_resource.export()
     response = HttpResponse(dataset.csv, content_type="text/csv")
-    response["Content-Disposition"] = f"attachment; filename={timestamp}_domains.csv"
+    add_content_disposition_header(response, f"{timestamp}_domains.csv")
 
     return response
 
@@ -859,7 +864,7 @@ def export_servers_to_csv(request):
     server_resource = StaticServerResource()
     dataset = server_resource.export()
     response = HttpResponse(dataset.csv, content_type="text/csv")
-    response["Content-Disposition"] = f"attachment; filename={timestamp}_servers.csv"
+    add_content_disposition_header(response, f"{timestamp}_servers.csv")
 
     return response
 
@@ -1698,6 +1703,18 @@ class TransientServerCreate(RoleBasedAccessControlMixin, CreateView):
         obj.project = self.project
         obj.operator = self.request.user
         obj.save()
+        cloud_servers = TransientServer.objects.filter(project=self.project, ip_address=obj.ip_address)
+        if len(cloud_servers) > 1:
+            messages.warning(
+                self.request,
+                f'You have {len(cloud_servers)} cloud servers sharing the IP address "{obj.ip_address}" for this project.',
+            )
+        static_servers = StaticServer.objects.filter(project=self.project, ip_address=obj.ip_address)
+        if len(static_servers) > 1:
+            messages.warning(
+                self.request,
+                f'You have checked out server that shares the provided IP address "{obj.ip_address}" on this project.',
+            )
         return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
@@ -1747,6 +1764,23 @@ class TransientServerUpdate(RoleBasedAccessControlMixin, UpdateView):
             reverse("rolodex:project_detail", kwargs={"pk": self.object.project.id})
         )
         return ctx
+
+    def form_valid(self, form):
+        cloud_servers = TransientServer.objects.filter(project=self.object.project, ip_address=self.object.ip_address)
+        if len(cloud_servers) > 1:
+            messages.warning(
+                self.request,
+                f'You have {len(cloud_servers)} cloud servers sharing the IP address "{self.object.ip_address}" for this project',
+            )
+        static_servers = ServerHistory.objects.filter(
+            project=self.object.project, server__ip_address=self.object.ip_address
+        )
+        if len(static_servers) > 1:
+            messages.warning(
+                self.request,
+                f'You have checked out server that shares the provided IP address "{self.object.ip_address}" on this project.',
+            )
+        return super().form_valid(form)
 
 
 class DomainServerConnectionCreate(RoleBasedAccessControlMixin, CreateView):
