@@ -19,6 +19,8 @@
           </div>
         </div>
       </th>
+      <th class="align-middle">Category</th>
+      <th class="align-middle">Status</th>
       <th class="align-middle">
         <div class="dropdown dropleft">
           <span id="owner-info-btn" class="dropdown-info" data-toggle="dropdown" aria-haspopup="true"
@@ -61,7 +63,26 @@
               data-placement="top"
               title="Click-n-drag to reposition or categorize"
             ></td>
-            <td class="align-middle">
+            <td class="align-middle icon {% if finding.finding_type.finding_type == "Internal" %}
+                                           network-icon" title="Internal Finding"
+                                     {% elif finding.finding_type.finding_type == "External" %}
+                                           globe-icon" title="External Finding"
+                                     {% elif finding.finding_type.finding_type == "Wireless" %}
+                                           wireless-icon" title="Wireless Finding"
+                                     {% elif finding.finding_type.finding_type == "Physical" %}
+                                           physical-icon" title="Physical Security Finding"
+                                     {% elif finding.finding_type.finding_type == "Web" %}
+                                           code-icon" title="Web App Finding"
+                                     {% elif finding.finding_type.finding_type == "Mobile" %}
+                                           mobile-icon" title="Mobile Finding"
+                                     {% elif finding.finding_type.finding_type == "Cloud" %}
+                                           cloud-icon" title="Cloud Finding"
+                                     {% elif finding.finding_type.finding_type == "Host" %}
+                                           host-icon" title="Local Host Finding"
+                                     {% else %}
+                                           minus-icon" title="other finding"
+                                     {% endif %}>
+              <span style="display: none;">{{ finding.finding_type.finding_type }}</span>
               <a id="delete-target-content-finding-{{ finding.id }}"
                 {% if finding.added_as_blank %}
                  class="clickable icon flag-icon" data-toggle="tooltip" data-placement="top"
@@ -150,6 +171,8 @@
                 ></a>
               </td>
             {% endif %}
+            <td class="align-middle">{{ finding.replication_steps | striptags }}</td>
+            <td class="align-middle">{{ finding.network_detection_techniques | striptags }}</td>
             {% if finding.assigned_to == request.user %}
               <td class="align-middle">
                 <span id="assignee-status-{{ finding.id }}" class="
