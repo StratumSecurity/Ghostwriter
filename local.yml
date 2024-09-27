@@ -1,6 +1,7 @@
 volumes:
   local_postgres_data: {}
   local_postgres_data_backups: {}
+  local_staticfiles: {}
   local_data: {}
 
 services:
@@ -13,6 +14,8 @@ services:
       - postgres
     volumes:
       - .:/app
+      - /opt/ssl:/ssl
+      - local_staticfiles:/app/staticfiles
       - local_data:/app/ghostwriter/media
     labels:
       name: ghostwriter_django

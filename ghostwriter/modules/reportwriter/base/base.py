@@ -1,4 +1,3 @@
-
 from datetime import datetime
 import io
 from typing import Any, Iterable
@@ -25,6 +24,7 @@ class ExportBase:
     * `data`: The object passed into `__init__` ran through `serialize_object`, usually a dict, for passing into a Jinja env
     * `jinja_env`: Jinja2 environment for templating
     """
+
     input_object: Any
     data: Any
     jinja_env: jinja2.Environment
@@ -37,7 +37,9 @@ class ExportBase:
         self.extra_fields_spec_cache = {}
 
         if jinja_debug:
-            self.jinja_env, self.jinja_undefined_variables = prepare_jinja2_env(debug=True)
+            self.jinja_env, self.jinja_undefined_variables = prepare_jinja2_env(
+                debug=True
+            )
         else:
             self.jinja_env = prepare_jinja2_env(debug=False)
             self.jinja_undefined_variables = None
@@ -82,7 +84,9 @@ class ExportBase:
             self.evidences_by_id[evi["id"]] = evi
         return out
 
-    def create_lazy_template(self, location: str | None, text: str, context: dict) -> LazilyRenderedTemplate:
+    def create_lazy_template(
+        self, location: str | None, text: str, context: dict
+    ) -> LazilyRenderedTemplate:
         return LazilyRenderedTemplate(
             ReportExportError.map_jinja2_render_errors(
                 lambda: rich_text_template(self.jinja_env, text),
@@ -92,7 +96,9 @@ class ExportBase:
             context,
         )
 
-    def process_extra_fields(self, location: str, extra_fields: dict, model, context: dict):
+    def process_extra_fields(
+        self, location: str, extra_fields: dict, model, context: dict
+    ):
         """
         Process the `extra_fields` dict, filling missing extra fields with empty values and replacing
         rich texts with a `LazyRenderedTemplate`.
@@ -138,7 +144,9 @@ class ExportBase:
         except jinja2.TemplateError as e:
             raise ValidationError(str(e)) from e
         except TypeError as e:
-            logger.exception("TypeError while validating report filename. May be a syntax error or an actual error.")
+            logger.exception(
+                "TypeError while validating report filename. May be a syntax error or an actual error."
+            )
             raise ValidationError(str(e)) from e
 
     def render_filename(self, filename_template, ext=None):
@@ -153,7 +161,7 @@ class ExportBase:
 
         report_name = ReportExportError.map_jinja2_render_errors(
             lambda: self.jinja_env.from_string(filename_template).render(data),
-            "the template filename"
+            "the template filename",
         )
 
         report_name = _replace_filename_chars(report_name)
@@ -187,4 +195,4 @@ def _valid_xml_char_ordinal(c):
 def _replace_filename_chars(name):
     """Remove illegal characters from the report name."""
     name = name.replace("–", "-")
-    return re.sub(r"[<>:;\"'/\\|?*.,{}\[\]]", "", name)
+    return re.sub(r"[<>:;\"'/\\|?*,{}\[\]]", "", name)

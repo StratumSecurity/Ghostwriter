@@ -24,6 +24,12 @@ LINTER_CONTEXT = {
         "complete": False,
         "start_time": "09:00:00",
         "end_time": "17:00:00",
+        "chart_bar": "{{.chart_bar}}",
+        "chart_bar_rt": "",
+        "chart_bar_external": "{{.chart_bar_external}}",
+        "chart_bar_external_rt": "",
+        "chart_bar_internal": "{{.chart_bar_internal}}",
+        "chart_bar_internal_rt": "",
         "tags": ["tag1", "tag2", "tag3"],
         "extra_fields": {},
     },
@@ -273,7 +279,9 @@ LINTER_CONTEXT = {
                 "role": "Team Server / C2 Server",
                 "start_date": "Mar. 1, 2021",
                 "end_date": "Jun. 25, 2021",
-                "dns": [{"domain": "ghostwriter.wiki", "endpoint": "", "subdomain": "www"}],
+                "dns": [
+                    {"domain": "ghostwriter.wiki", "endpoint": "", "subdomain": "www"}
+                ],
                 "note": "<p>Long-haul C2 server</p>",
                 "note_rt": "",
                 "extra_fields": {},
@@ -303,7 +311,9 @@ LINTER_CONTEXT = {
                 "activity": "Phishing",
                 "role": "SMTP",
                 "provider": "Amazon Web Services",
-                "dns": [{"domain": "specterops.io", "endpoint": "", "subdomain": "smtp"}],
+                "dns": [
+                    {"domain": "specterops.io", "endpoint": "", "subdomain": "smtp"}
+                ],
                 "ip_address": "30.49.38.30",
                 "name": "SMTP01",
                 "note": "<p>SMTP server for phishing emails; running Gophish</p>",
@@ -482,6 +492,29 @@ LINTER_CONTEXT = {
         "scope": 6,
         "team": 2,
         "targets": 1,
+        "chart_data": {
+            "Injection": {
+                "total": 4,
+                "weight": 4,
+                "severity": {
+                    "critical": 0,
+                    "high": 0,
+                    "medium": 0,
+                    "low": 0,
+                    "info": 4,
+                },
+            }
+        },
+        "chart_data_internal": {},
+        "chart_data_external": {},
+        "grades": {
+            "report_grade_appsec": "A",
+            "average_grade_appsec": "B",
+            "report_grade_external": "A",
+            "average_grade_external": "B",
+            "report_grade_internal": "A",
+            "average_grade_internal": "B",
+        },
     },
     "tools": ["beacon", "covenant", "mythic", "poseidon"],
     "evidence": [
