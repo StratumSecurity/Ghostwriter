@@ -26,7 +26,9 @@ def get_grade_comparison(grade, class_average_grade):
     # in the comments above in get_color_by_grade
     compare_label = "an average"
 
-    if my_grade and average_grade:
+    # Have to be explicit on "is not None" as a bug happened when the grade was an F
+    # probably because the value was 0
+    if my_grade is not None and average_grade is not None:
         if my_grade > average_grade:
             compare_label = "an above average"
         elif my_grade < average_grade:
