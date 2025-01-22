@@ -59,7 +59,7 @@ from ghostwriter.shepherd.models import (
 )
 from ghostwriter.stratum.enums import Severity as SeverityLevels
 from ghostwriter.stratum.findings_chart import format_chart_data
-from ghostwriter.stratum.grade_graph import (
+from ghostwriter.stratum.grades import (
     calculate_grade,
     calculate_grade_by_findings,
     calculate_average_grade,

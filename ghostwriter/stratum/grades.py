@@ -1,7 +1,7 @@
 from datetime import timedelta
 from itertools import groupby
 
-from ghostwriter.reporting.models import ReportFindingLink
+from ghostwriter.reporting.models import FindingType, ReportFindingLink
 from .enums import Grade, Severity
 
 
@@ -62,7 +62,6 @@ def get_services(findings):
     # For appsec we group the finding types together
     # e.g. [{'appsec': ['Web', 'Mobile', 'Code Review']}, {'azure': ['Azure']}, ...]
     unique_types = set(finding["finding_type"].lower() for finding in findings)
-
     # Add appsec category with hardcoded values
     appsec_type = "appsec"
     appsec_categories = ["Web".lower(), "Mobile".lower(), "Code Review".lower()]
@@ -70,6 +69,15 @@ def get_services(findings):
         category.capitalize() for category in appsec_categories
     ]
     finding_types = []
+
+    if len(unique_types) == 0:
+        # Report with no findings
+        # In this case we get all the finding types to calculate the grades for each service
+        # More expensive since we calculate average grades for each service but doesn't require
+        # any user interaction to define the assessment being done
+        types = FindingType.objects.all().values_list("finding_type", flat=True)
+        unique_types = set(finding_type.lower() for finding_type in types)
+
     if any(type_key in appsec_categories for type_key in unique_types):
         finding_types.append({appsec_type: appsec_categories_capitalized})
 
