@@ -57,7 +57,7 @@ from ghostwriter.shepherd.models import (
     StaticServer,
     TransientServer,
 )
-from ghostwriter.stratum.enums import Severity
+from ghostwriter.stratum.enums import Severity as SeverityLevels
 from ghostwriter.stratum.findings_chart import format_chart_data
 from ghostwriter.stratum.grade_graph import (
     calculate_grade,
@@ -1039,15 +1039,15 @@ class ReportDataSerializer(CustomModelSerializer):
             finding["ordering"] = finding_order
             severity = finding["severity"].lower()
 
-            if severity == Severity.CRIT.value.lower():
+            if severity == SeverityLevels.CRIT.value.lower():
                 critical_findings += 1
-            elif severity == Severity.HIGH.value.lower():
+            elif severity == SeverityLevels.HIGH.value.lower():
                 high_findings += 1
-            elif severity == Severity.MED.value.lower():
+            elif severity == SeverityLevels.MED.value.lower():
                 medium_findings += 1
-            elif severity == Severity.LOW.value.lower():
+            elif severity == SeverityLevels.LOW.value.lower():
                 low_findings += 1
-            elif severity == Severity.INFO.value.lower():
+            elif severity == SeverityLevels.INFO.value.lower():
                 info_findings += 1
             finding_order += 1
 
