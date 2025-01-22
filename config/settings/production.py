@@ -75,6 +75,10 @@ DEFAULT_FROM_EMAIL = env("DJANGO_DEFAULT_FROM_EMAIL", default="Ghostwriter <nore
 SERVER_EMAIL = env("DJANGO_SERVER_EMAIL", default=DEFAULT_FROM_EMAIL)
 # https://docs.djangoproject.com/en/dev/ref/settings/#email-subject-prefix
 EMAIL_SUBJECT_PREFIX = env("DJANGO_EMAIL_SUBJECT_PREFIX", default="[Ghostwriter]")
+# https://docs.djangoproject.com/en/dev/ref/settings/#email-host
+EMAIL_HOST = "172.22.0.1"
+# https://docs.djangoproject.com/en/dev/ref/settings/#email-port
+EMAIL_PORT = 25
 
 # ADMIN
 # ------------------------------------------------------------------------------
@@ -150,6 +154,13 @@ LOGGING = {
 
 # Your stuff...
 # ------------------------------------------------------------------------------
+INSTALLED_APPS = ["allauth.socialaccount.providers.microsoft"] + INSTALLED_APPS
+SOCIALACCOUNT_PROVIDERS = {
+    "microsoft": {
+        "TENANT": env("SSO_TENANT_ID"),
+        "client_id": env("SSO_CLIENT_ID"),
+    }
+}
 
 # Include files in `production.d`. These are added in alphabetical order - using a numeric prefix
 # like `10-subconfig.py` can be used to order inclusions

@@ -15,7 +15,9 @@ from ghostwriter.oplog.models import OplogEntry
 from ghostwriter.reporting.models import Finding, Observation, Report
 from ghostwriter.rolodex.models import Client, Project
 from ghostwriter.shepherd.models import Domain, StaticServer
-
+from stratum.enums import FindingStatusColor, get_value_from_key, strip_html
+from stratum.reportwriter.writer import get_grades_from_context
+from stratum.reportwriter.jinja_funcs import get_color_by_grade
 
 class ExportReportBase(ExportBase):
     """
@@ -111,9 +113,15 @@ class ExportReportBase(ExportBase):
             finding["host_detection_techniques_rt"] = finding_render(
                 "the host detection techniques section", finding["host_detection_techniques"]
             )
-            finding["network_detection_techniques_rt"] = finding_render(
-                "the network detection techniques section", finding["network_detection_techniques"]
-            )
+    
+            # Finding Status field for retests but might not always be populated.
+            # We haven't been using GW for retests.
+            # TODO Maybe migrate away from this to extra fields for Finding Status as a dropdown of values?
+            finding_status = finding["network_detection_techniques"]
+            if finding_status:
+                finding_status = strip_html(finding_status)
+                finding["network_detection_techniques_rt"] = self._severity_rich_text(finding_status, get_value_from_key(FindingStatusColor, finding_status))
+
             finding["references_rt"] = finding_render("the references section", finding["references"])
 
             self.process_extra_fields(
@@ -135,6 +143,16 @@ class ExportReportBase(ExportBase):
             self.process_extra_fields(
                 f"observation {observation['title']}", observation["extra_fields"], Observation, rich_text_context
             )
+
+        # Bar Charts
+        base_context["project"]["chart_bar_rt"] = self.create_lazy_template("the report bar chart", "<p></p>", rich_text_context)
+        base_context["project"]["chart_bar_external_rt"] = self.create_lazy_template("the report bar chart", "<p></p>", rich_text_context)
+        base_context["project"]["chart_bar_internal_rt"] = self.create_lazy_template("the report bar chart", "<p></p>", rich_text_context)
+
+        # Need to register rich text tags for grades in order
+        for grade_label, grade in get_grades_from_context(base_context):
+            if grade:
+                base_context["project"][f"{grade_label}_rt"] = self._severity_rich_text(grade, get_color_by_grade(grade))
 
         # Report extra fields
         self.process_extra_fields("the report", base_context["extra_fields"], Report, rich_text_context)
