@@ -1,5 +1,7 @@
 """This contains customizations for `rest_framework.serializers` classes used by Ghostwriter."""
 
+# IF YOU EDIT THIS FILE: also update `linting_utils.py`
+
 # Standard Libraries
 from datetime import datetime
 
@@ -30,6 +32,7 @@ from ghostwriter.reporting.models import (
     ReportFindingLink,
     ReportObservationLink,
     ReportTemplate,
+    Severity,
 )
 from ghostwriter.rolodex.models import (
     Client,
@@ -93,7 +96,7 @@ class CustomModelSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         for key, value in data.items():
             try:
-                if not value:
+                if value is None:
                     data[key] = ""
             except KeyError:
                 pass
@@ -166,7 +169,7 @@ class ExtraFieldsSerField(serializers.Field):
 
 
 class UserSerializer(CustomModelSerializer):
-    """Serialize :model:`users:User` entries."""
+    """Serialize :model:`users.User` entries."""
 
     name = SerializerMethodField("get_name")
 
@@ -250,6 +253,7 @@ class FindingLinkSerializer(TaggitSerializer, CustomModelSerializer):
     severity_color_rgb = SerializerMethodField("get_severity_color_rgb")
     severity_color_hex = SerializerMethodField("get_severity_color_hex")
     extra_fields = ExtraFieldsSerField(Finding._meta.label)
+    cvss_data = SerializerMethodField("get_cvss_data")
     tags = TagListSerializerField()
 
     # Include a copy of the ``mitigation`` field as ``recommendation`` to match legacy JSON output
@@ -282,6 +286,9 @@ class FindingLinkSerializer(TaggitSerializer, CustomModelSerializer):
 
     def get_severity_color_hex(self, obj):
         return obj.severity.color_hex
+
+    def get_cvss_data(self, obj):
+        return obj.cvss_data
 
 
 class ObservationLinkSerializer(TaggitSerializer, CustomModelSerializer):
@@ -793,6 +800,9 @@ class OplogSerializer(TaggitSerializer, CustomModelSerializer):
 class FullProjectSerializer(serializers.Serializer):
     """Serialize :model:`rolodex:Project` and related entries."""
 
+    # IF YOU EDIT THIS CLASS:
+    # Also edit `linting_utils.py` and the `generate_lint_data` method in `reportwriter/project/base.py`.
+
     project = ProjectSerializer(source="*")
     client = ClientSerializer()
     contacts = ProjectContactSerializer(
@@ -849,6 +859,27 @@ class FullProjectSerializer(serializers.Serializer):
         return ProjectContactSerializer(primary, exclude=["id", "project"]).data
 
 
+class SeveritySerializer(CustomModelSerializer):
+    """Serialize :model:`reporting.Severity` entries."""
+
+    severity_color = SerializerMethodField("get_severity_color")
+    severity_color_rgb = SerializerMethodField("get_severity_color_rgb")
+    severity_color_hex = SerializerMethodField("get_severity_color_hex")
+
+    class Meta:
+        model = Severity
+        fields = ["id", "severity", "severity_color", "severity_color_rgb", "severity_color_hex", "weight", "color"]
+
+    def get_severity_color(self, obj):
+        return obj.color
+
+    def get_severity_color_rgb(self, obj):
+        return obj.color_rgb
+
+    def get_severity_color_hex(self, obj):
+        return obj.color_hex
+
+
 class ReportDataSerializer(CustomModelSerializer):
     """Serialize :model:`rolodex:Project` and all related entries."""
 
@@ -884,9 +915,8 @@ class ReportDataSerializer(CustomModelSerializer):
         source="project.whitecard_set", many=True, exclude=["id", "project"]
     )
     infrastructure = ProjectInfrastructureSerializer(source="project")
-    evidence = EvidenceSerializer(
-        source="evidence_set", many=True, exclude=["report", "finding"]
-    )
+    evidence = EvidenceSerializer(source="evidence_set", many=True, exclude=["report", "finding"])
+    severities = SerializerMethodField("get_severities")
     findings = FindingLinkSerializer(
         source="reportfindinglink_set",
         many=True,
@@ -961,6 +991,11 @@ class ReportDataSerializer(CustomModelSerializer):
                 primary = contact
                 break
         return ProjectContactSerializer(primary, exclude=["id", "project"]).data
+
+    def get_severities(self, obj):
+        severities = Severity.objects.all()
+        serializer = SeveritySerializer(severities, many=True, exclude=["id"])
+        return serializer.data
 
     def to_representation(self, instance):
         # Get the standard JSON from ``super()``

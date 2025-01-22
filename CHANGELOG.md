@@ -1,10 +1,138 @@
 # Changelog
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# CHANGELOG
+## [4.3.11] - 8 January 2025
+
+### Changed
+
+* Updated the pre-built Ghostwriter CLI binaries to v0.2.22
+
+## [4.3.10] - 3 January 2025
+
+### Added
+
+* Added a `HASURA_GRAPHQL_SERVER_HOSTNAME` for the DotEnv file to allow for setting the Hasura server hostname (Fixes #566)
+  * This is available for Kubernetes deployments (see issue #566)
+  * For all other deployments, the Hasura server hostname should be left set to `graphql_engine` by default
+
+### Changed
+
+* The linter now checks if the list styles are of type `PARAGRAPH` in the Word template
+* The archived reports page now displays the project name for each report to help with identification
+* Updated the pre-built Ghostwriter CLI binaries to v0.2.21
+
+## [4.3.9] - 10 December 2024
+
+### Changed
+
+* Evidence previews for custom fields and evidence detail pages now display evidence at 6.5" wide to mimic the standard full-width seen in a Word document
+
+### Fixed
+
+* Fixed an issue that could cause improper casing for the first word in a caption
+
+## [4.3.8] - 6 December 2024
+
+### Added
+
+* Added buttons to jump to a selected template from the report dashboard
+
+### Changed
+
+* Enabled pasting with formatting in the WYSIWYG editor
+  * This change allows you to paste formatted text from other sources (e.g., Word documents) into the editor
+  * This caused issues in the past when pasting from Word, some terminals, and some websites, but the reporting engine seems to handle the formatting well now
+  * **Note:** Pasting with formatting may not work as expected in all cases, so please check your pasted content in the editor before generating a report
+* Increased the auto-complete list's maximum items from 10 to 20 to show more evidence files
+* Using the "Upload Evidence" button in the editor now pushes a `ref` version of the auto-complete entry to the auto-complete list upon successful upload
+
+### Fixed
+
+* Fixed activity log filtering not working correctly when very large log entries were present (PR #558)
+
+## [4.3.7] - 25 November 2024
+
+### Fixed
+
+* Fixed forms not accepting decimal values for extra fields (PR #554)
+* Fixed cross-references not working when the reference name contained spaces (PR #556)
+
+## [4.3.6] - 14 November 2024
+
+### Added
+
+* Added support for table captions in the WYSIWYG editor (PR #547)
+  * Caption text can be customized by right-clicking on the table > Table Properties > General > Show caption
+* Added report configuration options for figure and table caption placement (above or below) for Word
+
+### Changed
+
+* Production deployments now default to only exposing PostgreSQL and Hasura ports to internal services (PR #551)
+  * This change is to improve security by limiting the number of exposed ports on the server
+  * If you need direct access to PostgreSQL or Hasura, you can adjust the Docker Compose file to expose the ports on the host system or run a utility like `psql` inside the container
+
+### Fixed
+
+* Fixed observations not being cloned when cloning a report (PR #548)
+* Fixed lists being styled as _List Paragraph_ in Word instead of with user-defined _Bullet List_ or _Number List_ styles (PR #550)
+
+## [4.3.5] - 30 October 2024
+
+### Changed
+
+* The `added_as_blank` attribute for findings is now included in the template linter
+
+### Fixed
+
+* Fixed `false` values appearing as `""` in the report template context after release v4.3.4
+
+## [4.3.4] - 24 October 2024
+
+### Changed
+
+* Adjusted the duplicate IP address checks for cloud servers on a project to make them more robust to catch more edge cases
+
+### Fixed
+
+* Fixed an issue with creating a new cloud server on a project
+
+## [4.3.3] - 21 October 2024
+
+### Added
+
+* Added display for the temporal and environmental scores on the CVSS v3.1 calculator (Closes #536)
+* Added a `cvss_data` key to the report context that includes the CVSS data for each finding
+  * The key is a list that includes four items: the CVSS version, score(s), severity, and your configured color for the severity
+  * The score and severity data includes the temporal and environmental scores for CVSS v3.1, so those scores, severities, and colors are lists (base, temporal, environmental)
+  * The data is available for use in the report template
+
+### Fixed
+
+* Fixed values of zero (e.g., `0` or `0.0`) displaying as "No Value Set" for extra fields (Closes #541)
+* Fixed a minor style issue with the sidebar
+
+## [4.3.2] - 30 Sep 2024
+
+### Added
+
+* Add a `severities` key to the report context that includes a list of all severity categories in the database (Closes #427)
+  * Each severity category includes the category's name, color as a hex value, color as an RGB value, color as a hex tuple, and the category's weight
+  * Each entry also has a `severity_rt` RichText object  for Word that places the severity in a font color that matches the severity's color
+    * This object is identical to the `severity_rt` object on findings
+
+### Changed
+
+* Reworked the CVSS calculators on findings to allow switching between CVSS v3/3.1 and v4 (Closes #232, #356, #387, and #509)
+  * Changes include the addition of the "modified" metrics like temporal, environmental, threat, and supplemental sections
+* Changed autocomplete suggestions in the WYSIWYG editor to no longer be case-sensitive (Fixes #440)
+
+### Fixed
+
+* Fixed archive report generation failing due to the Word template used for the PowerPoint report (PR #528)
 
 ## [4.3.1] – 25 Sep 2024
 
