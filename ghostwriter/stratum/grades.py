@@ -37,8 +37,8 @@ def _calculate_numeric_grade(critical, high, medium, low, weight):
     # https://defectdojo.github.io/django-DefectDojo/usage/productgrading/
     health = 100
 
-    # Weight shouldn't be 0 or exceed 1 as it will cause lower grades
-    if weight > _DEFAULT_WEIGHT or weight == 0:
+    # Weight shouldn't be negative or 0, or exceed 1 as it will cause incorrect grades
+    if weight <= 0 or weight > _DEFAULT_WEIGHT:
         weight = _DEFAULT_WEIGHT
 
     # Adjust initial health score based on severity of findings

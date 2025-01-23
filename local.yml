@@ -54,6 +54,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - REDIS_URL=redis://${REDIS_HOST}:${REDIS_PORT}/0
       - WEB_CONCURRENCY=${DJANGO_WEB_CONCURRENCY}
+      - CLOUD_GRADE_WEIGHT=${CLOUD_GRADE_WEIGHT}
     healthcheck:
       test: curl --insecure --fail http://django:8000/status/simple/ || exit 1
       interval: ${HEALTHCHECK_INTERVAL}
