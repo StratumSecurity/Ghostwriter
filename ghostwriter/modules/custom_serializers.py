@@ -58,6 +58,7 @@ from ghostwriter.shepherd.models import (
     TransientServer,
 )
 from ghostwriter.stratum.enums import Severity as SeverityLevels
+from ghostwriter.stratum.enums import Service
 from ghostwriter.stratum.findings_chart import format_chart_data
 from ghostwriter.stratum.grades import (
     calculate_grade,
@@ -1076,33 +1077,39 @@ class ReportDataSerializer(CustomModelSerializer):
         # For each service, generate the bar chart(s) and grade calculations
         # Netsec combo reports are handled and appsec (web, mobile, code review) is grouped together
         for service in get_services(findings):
-            for name, finding_types in service.items():
-                chart_label = "chart_data"
+            chart_label = "chart_data"
+            name = service["name"]
+            finding_types = service["finding_types"]
+            weight = service["weight"]
 
-                # The condition check is needed for the netsec combo reports
-                if name.lower() == "internal":
-                    netsec_internal_findings = _get_findings_by_type(findings, name)
-                    chart_data = format_chart_data(netsec_internal_findings)
-                    chart_label = f"chart_data_{name}"
-                    grade = calculate_grade_by_findings(netsec_internal_findings)
-                elif name.lower() == "external":
-                    netsec_external_findings = _get_findings_by_type(findings, name)
-                    chart_data = format_chart_data(netsec_external_findings)
-                    chart_label = f"chart_data_{name}"
-                    grade = calculate_grade_by_findings(netsec_external_findings)
-                else:
-                    chart_data = format_chart_data(findings)
-                    grade = calculate_grade(
-                        critical_findings, high_findings, medium_findings, low_findings
-                    )
+            # The condition check is needed for the netsec combo reports
+            if name.lower() == Service.INTERNAL.value.lower():
+                netsec_internal_findings = _get_findings_by_type(findings, name)
+                chart_data = format_chart_data(netsec_internal_findings)
+                chart_label = f"chart_data_{name}"
+                grade = calculate_grade_by_findings(netsec_internal_findings, weight)
+            elif name.lower() == Service.EXTERNAL.value.lower():
+                netsec_external_findings = _get_findings_by_type(findings, name)
+                chart_data = format_chart_data(netsec_external_findings)
+                chart_label = f"chart_data_{name}"
+                grade = calculate_grade_by_findings(netsec_external_findings, weight)
+            else:
+                chart_data = format_chart_data(findings)
+                grade = calculate_grade(
+                    critical_findings,
+                    high_findings,
+                    medium_findings,
+                    low_findings,
+                    weight,
+                )
 
-                rep["totals"][chart_label] = chart_data
-                avg_grade = calculate_average_grade(finding_types, project_start_date)
+            rep["totals"][chart_label] = chart_data
+            avg_grade = calculate_average_grade(finding_types, project_start_date, weight)
 
-                # Defaulting to {} as Netsec combo report needs to append
-                grades = rep["totals"].setdefault("grades", {})
-                grades[f"report_grade_{name}"] = grade
-                grades[f"average_grade_{name}"] = avg_grade
+            # Defaulting to {} as Netsec combo report needs to append
+            grades = rep["totals"].setdefault("grades", {})
+            grades[f"report_grade_{name}"] = grade
+            grades[f"average_grade_{name}"] = avg_grade
 
         return rep
 

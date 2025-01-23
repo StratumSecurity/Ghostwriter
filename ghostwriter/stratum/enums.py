@@ -12,6 +12,18 @@ class Severity(Enum):
     INFO = "Info"
 
 
+class Service(Enum):
+    EXTERNAL = "External"
+    INTERNAL = "Internal"
+    WEB = "Web"
+    MOBILE = "Mobile"
+    CODE_REVIEW = "Code Review"
+    AWS = "AWS"
+    AZURE = "Azure"
+    GCP = "GCP"
+    M365 = "M365"
+
+
 class FindingStatusColor(Enum):
     OPEN = ("OPEN", "F0582B")
     CLOSED = ("CLOSED", "8BC53F")
