@@ -521,7 +521,7 @@ REDIS_URL = env("REDIS_URL", default="redis://redis:6379")
 TAGGIT_CASE_INSENSITIVE = True
 
 # Stratum envs
-CLOUD_GRADE_WEIGHT = env("CLOUD_GRADE_WEIGHT", default=1)
+CLOUD_GRADE_WEIGHT = env.float("CLOUD_GRADE_WEIGHT", default=1.0)
 
 
 def include_settings(py_glob):
