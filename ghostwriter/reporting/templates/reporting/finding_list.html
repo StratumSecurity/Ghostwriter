@@ -37,8 +37,9 @@
         <thead>
         <tr>
           <th class="sortable pr-4 align-middle">Severity</th>
-          <th class="sortable pr-4 align-middle">Type</th>
+          <th class="sortable pr-4 align-middle">Type</span></th>
           <th class="sortable pr-4 align-middle">Title</th>
+          <th class="sortable pr-4">Category</th>
           {% if searching_report_findings %}
             <th class="sortable pr-4 align-middle">Report</th>
           {% endif %}
@@ -101,9 +102,12 @@
             </td>
             <!-- Finding Type (e.g. Network) -->
             <td class="align-middle icon
-                                {% if finding.finding_type.finding_type == "Network" %}
+                                {% if finding.finding_type.finding_type == "Internal" %}
                                     network-icon"
-                title="Network Finding"
+                title="Internal Finding"
+            {% elif finding.finding_type.finding_type == "External" %}
+                                globe-icon"
+                                title="External Finding"
             {% elif finding.finding_type.finding_type == "Wireless" %}
                 wireless-icon"
               title="Wireless Finding"
@@ -113,7 +117,7 @@
             {% elif finding.finding_type.finding_type == "Web" %}
               code-icon"
               title="Web App Finding"
-            {% elif finding.finding_type.finding_type == "Mobile Application" %}
+            {% elif finding.finding_type.finding_type == "Mobile" %}
               mobile-icon"
               title="Mobile Finding"
             {% elif finding.finding_type.finding_type == "Cloud" %}
@@ -123,7 +127,7 @@
               host-icon"
               title="Local Host Finding"
             {% else %}
-              host-icon"
+              minus-icon"
               title="other Finding"
             {% endif %}
             >
@@ -133,6 +137,8 @@
             <!-- Other Information -->
             <td class="text-justify">
               <a class="clickable" href="{{ finding.get_absolute_url }}">{{ finding.title }}</a>
+            </td>
+            <td class="align-middle">{{ finding.replication_steps | striptags }}
             </td>
             {% if searching_report_findings %}
               <td class="text-justify">
