@@ -16,6 +16,7 @@ from ghostwriter.modules.reportwriter.base.base import ExportBase
 from ghostwriter.modules.reportwriter.base.html_rich_text import (
     HtmlAndRich,
     LazilyRenderedTemplate,
+    LazySubdocRender,
     deep_copy_with_copiers,
 )
 from ghostwriter.modules.reportwriter.richtext.docx import HtmlToDocxWithEvidence
@@ -55,6 +56,7 @@ class ExportDocxBase(ExportBase):
     company_config: CompanyInformation
     linting: bool
     p_style: str | None
+    evidence_image_width: float | None
 
     @classmethod
     def mime_type(cls) -> str:
@@ -71,6 +73,7 @@ class ExportDocxBase(ExportBase):
         template_loc: str,
         p_style: str | None,
         linting: bool = False,
+        evidence_image_width: float | None,
         **kwargs,
     ):
         if "jinja_debug" not in kwargs:
@@ -78,6 +81,7 @@ class ExportDocxBase(ExportBase):
         super().__init__(object, **kwargs)
         self.linting = linting
         self.p_style = p_style
+        self.evidence_image_width = evidence_image_width
 
         # Create Word document writer using the specified template file
         try:
@@ -120,23 +124,23 @@ class ExportDocxBase(ExportBase):
         )
 
     def run(self) -> io.BytesIO:
-        self.create_styles()
-
-        rich_text_context = self.map_rich_texts()
-        docx_context = deep_copy_with_copiers(
-            rich_text_context,
-            {
-                LazilyRenderedTemplate: self.render_rich_text_docx,
-                HtmlAndRich: lambda v: v.rich,
-            },
-        )
-
         try:
             # Custom code needed to add bar chart and the data to the document
             images = build_report_bar_chart(self.word_doc, docx_context)
 
             for tag, image in images:
                 docx_context["project"][tag] = image
+
+            self.create_styles()
+
+            rich_text_context = self.map_rich_texts()
+            docx_context = deep_copy_with_copiers(
+                rich_text_context,
+                {
+                    LazilyRenderedTemplate: self.render_rich_text_docx,
+                    HtmlAndRich: lambda v: v.rich,
+                },
+            )
 
             ReportExportError.map_jinja2_render_errors(
                 lambda: self.word_doc.render(
@@ -170,7 +174,7 @@ class ExportDocxBase(ExportBase):
         """
         Creates default styles
         """
-        styles = self.word_doc.styles
+        styles = self.word_doc.get_docx().styles
         if "CodeBlock" not in styles:
             codeblock_style = styles.add_style("CodeBlock", WD_STYLE_TYPE.PARAGRAPH)
             codeblock_style.base_style = styles["Normal"]
@@ -259,30 +263,29 @@ class ExportDocxBase(ExportBase):
         """
         Renders a `LazilyRenderedTemplate`, converting the HTML from the TinyMCE rich text editor to a Word subdoc.
         """
-        doc = self.word_doc.new_subdoc()
-        ReportExportError.map_jinja2_render_errors(
-            lambda: HtmlToDocxWithEvidence.run(
-                rich_text.render_html(),
-                doc=doc,
-                p_style=self.p_style,
-                evidences=self.evidences_by_id,
-                figure_label=self.label_figure,
-                figure_prefix=self.prefix_figure,
-                figure_caption_location=self.figure_caption_location,
-                table_label=self.label_table,
-                table_prefix=self.prefix_table,
-                table_caption_location=self.table_caption_location,
-                title_case_captions=self.title_case_captions,
-                title_case_exceptions=self.title_case_exceptions,
-                border_color_width=(
-                    (self.border_color, self.border_weight)
-                    if self.enable_borders
-                    else None
+        def render():
+            doc = self.word_doc.new_subdoc()
+            ReportExportError.map_jinja2_render_errors(
+                lambda: HtmlToDocxWithEvidence.run(
+                    rich_text.render_html(),
+                    doc=doc,
+                    p_style=self.p_style,
+                    evidence_image_width=self.evidence_image_width,
+                    evidences=self.evidences_by_id,
+                    figure_label=self.label_figure,
+                    figure_prefix=self.prefix_figure,
+                    figure_caption_location=self.figure_caption_location,
+                    table_label=self.label_table,
+                    table_prefix=self.prefix_table,
+                    table_caption_location=self.table_caption_location,
+                    title_case_captions=self.title_case_captions,
+                    title_case_exceptions=self.title_case_exceptions,
+                    border_color_width=(self.border_color, self.border_weight) if self.enable_borders else None,
                 ),
-            ),
-            getattr(rich_text, "location", None),
-        )
-        return doc
+                getattr(rich_text, "location", None),
+            )
+            return doc
+        return LazySubdocRender(render)
 
     @classmethod
     def lint(cls, template_loc: str, p_style: str | None) -> Tuple[List[str], List[str]]:
@@ -309,6 +312,7 @@ class ExportDocxBase(ExportBase):
                 linting=True,
                 template_loc=template_loc,
                 p_style=p_style,
+                evidence_image_width=6.5,  # Value doesn't matter for linting
             )
             logger.info("Template loaded for linting")
 

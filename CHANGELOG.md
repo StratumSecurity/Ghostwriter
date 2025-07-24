@@ -5,6 +5,165 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.0.0] - 23 July 2025
+
+### Added
+
+* Introduced collaborative editing server and client-side components for real-time form collaboration
+  * This feature allows multiple users to edit the same form or field simultaneously
+  * The collaborative editing experience applies to report fields, findings, and observations for now
+  * We will expand this feature to other areas of Ghostwriter in future releases
+* Added new JavaScript/TypeScript frontend infrastructure with React components and GraphQL integration
+* Updated software dependencies to the latest versions, including Django and PostgreSQL
+  * **Important**: Upgrading an existing Ghostwriter v5 installation will require upgrading the database to v16
+    * Make a backup of your database before upgrading (`./ghostwriter-cli backup` or a server snapshot)
+    * Run `./ghostwriter-cli down`
+    * Update your release (e.g., `git pull`)
+    * Run`./ghostwriter-cli pg-upgrade`
+    * Run `./ghostwriter-cli containers build`
+
+### Changed
+
+* Replaced the TinyMCE WYSIWYG editor with the new Tiptap editor for collaborative writing
+  * TinyMCE is still used in some parts of Ghostwriter that are outside the collaborative editing experience
+  * This new editor looks different, but it offers all the same formatting features
+  * The new editor supports collaborative editing, allowing multiple users to edit the same document simultaneously
+  * You will no longer see a "Save" or "Submit" button as your work is saved automatically as part of the collaborative editing experience
+  * You can now insert image evidence and see a preview of it inline with your text as you work
+* Updated the Ghostwriter CLI binaries to v0.2.26
+  * These binaries include a new `tagcleanup` command to help you clean up unused or duplicated tags in your Ghostwriter instance
+
+## [5.0.12] - 18 July 2025
+
+### Added
+
+* Added a `createUser` mutation to the GraphQL API to allow creating new users
+  * This mutation is useful for creating new users without needing to use the web interface
+  * The mutation requires the `email`, `username`, `password`, `name`, and `role` fields
+  * Only admins can create new users via this mutation
+  * If you choose to allow managers to create users, the mutation will not allow them to create users with the manager or admin roles
+
+## [5.0.11] - 3 July 2025
+
+### Fixed
+
+* Fixed an issue that prevented a new user from configuring a TOTP device on login when `Require 2FA` was checked for their account
+
+## [5.0.10] - 18 June 2025
+
+### Changed
+
+* Changed the findings library filter for findings on reports to clear up confusion (Fixes #622)
+  * The "Return only findings on reports that started as blank findings" used to attempt to filter findings based on the `title` field
+  * That filtering was incorrect and led to results that did not align with the filters intent and tooltip
+  * The filter will now further filter the results to show only findings that started as blank templates
+
+### Fixed
+
+* Fixed disallowing signups not working for the general signup form (i.e., not the SSO signup)
+
+## [5.0.9] - 3 June 2025
+
+### Added
+
+* Added an option to exclude archived reports in the report library when viewing completed reports
+* Added observation and report evidence relationships for reports in the GraphQL schema 
+
+### Changed
+
+* The archive task will now use the selected default templates when generating archived reports
+* The archive report action will now display a confirmation prompt to confirm the action
+
+### Fixed
+
+* Fix archive task selecting reports to archive incorrectly
+  * It should now properly archive reports of completed projects that are 90 days (default) past the project end date
+  * It will now catch and log errors in the archive task and continue with other reports (Fixes #617)
+* The archiving task now stops on the first exception
+* Fixed the archive task not deleting evidence files (Fixes #618)
+
+
+## [5.0.8] - 30 May 2025
+
+### Added
+
+* Added options to show and hide columns in the findings and domains libraries
+  * This change allows you to customize the columns displayed in the libraries to suit your needs
+  * Selections are preserved in your browser's local storage, so they will not persist across browsers or devices
+
+### Changed
+
+* Table sorting will now be preserved between page loads and visits
+  * This change allows you to sort a table and have the sorting remain when you navigate away from the page and return
+  * The sorting is stored in your browser's local storage, so it will not persist across browsers or devices
+
+## [5.0.7] - 23 April 2025
+
+### Changed
+
+* Added auto-complete for tags in filter forms (e.g., domain and finding libraries)
+* Added the Tags column back to the tables for the domain and finding libraries
+* Made changes to optimize Word document generation
+  * This is part of an ongoing effort to optimize these workflows to reduce the time it takes to generate reports, especially those with large tables (Issue #585) 
+
+### Fixed
+
+* Fixed default values not populating for extra fields on observations (PR #604 by @rteatea)
+
+## [5.0.6] - 04 April 2025
+
+### Added
+
+* Added a new "Quickstart" card to the homepage dashboard to help guide new users
+  * The card includes general information tog et started, links to the wiki, and a link to the Ghostwriter community
+  * Users can hide the card with the button on the card
+
+### Changed
+
+* Numerous user interface and user experience (UI/UX) enhancements
+* Reduced table sizes to improve readability
+  * Some table columns (e.g., notes and additional information unneeded for sorting) have moved into informational modals
+  * You can open the modals by clicking the "i" icon in the table row
+* Library filters are now inside collapsible sections to reduce clutter
+  * If you prefer the filters always be accessible, their collapsed status is now tracked in your browser's local storage
+  * If you open a filter, all filters will be open by default until you close them
+* Selecting a report to edit from the sidebar will no longer redirect you to the report
+  * We added the redirect to remove a click long ago, but this made it difficult to manage multiple reports
+  * Now, selecting a report will swap reports and allow you to continue selecting findings in the library without a redirect
+* Modified the homepage dashboard to show more relevant information and provide user guidance
+  * We will continue to improve the homepage dashboard in future releases based on feedback
+
+### Fixed
+
+* Fixed report template "Upload Date" changing whenever the template was updated without changing the template file
+
+## [5.0.5] - 14 March 2025
+
+### Added
+
+* Added a setting on report templates to control the width of evidence files for Microsoft Word reports (PR #597)
+  * The default is still Word's standard 6.5" width
+  * The setting allows you to adjust the width to fit your needs
+
+## [5.0.4] - 13 March 2025
+
+### Added
+
+* Added a filter to the findings library to show only findings on reports that have not been created in or cloned to the library
+  * While filtering with "Search findings on reports" you can select "Return only findings on reports & not in the library"
+
+### Fixed
+
+* Fixed table sorting on activity logs
+
+## [5.0.3] - 28 February 2025
+
+### Added
+
+* Added objective result fields to the GraphQL schema and reporting engine
+  * Objectives now have `result` and `result_rt` fields that can be used in report templates
+  * The `result` field can now be updated via the GraphQL API
+
 ## [5.0.2] - 24 February 2025
 
 ### Fixed

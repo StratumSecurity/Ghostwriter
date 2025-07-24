@@ -12,9 +12,9 @@ from django.contrib.messages import constants as messages
 # 3rd Party Libraries
 import environ
 
-__version__ = "5.0.2"
+__version__ = "6.0.0"
 VERSION = __version__
-RELEASE_DATE = "24 February 2025"
+RELEASE_DATE = "23 July 2025"
 
 ROOT_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
 APPS_DIR = ROOT_DIR / "ghostwriter"
@@ -209,7 +209,9 @@ STATIC_ROOT = str(ROOT_DIR / "staticfiles")
 # https://docs.djangoproject.com/en/dev/ref/settings/#static-url
 STATIC_URL = "/static/"
 # https://docs.djangoproject.com/en/dev/ref/contrib/staticfiles/#std:setting-STATICFILES_DIRS
-STATICFILES_DIRS = (str(APPS_DIR / "static"),)
+STATICFILES_DIRS = [
+    str(APPS_DIR / "static"),
+]
 # https://docs.djangoproject.com/en/dev/ref/contrib/staticfiles/#staticfiles-finders
 STATICFILES_FINDERS = [
     "django.contrib.staticfiles.finders.FileSystemFinder",
@@ -279,7 +281,7 @@ SESSION_SAVE_EVERY_REQUEST = env("DJANGO_SESSION_SAVE_EVERY_REQUEST", default=Tr
 # https://docs.djangoproject.com/en/3.2/ref/settings/#session-cookie-secure
 SESSION_COOKIE_SECURE = env("DJANGO_SESSION_COOKIE_SECURE", default=False)
 # https://docs.djangoproject.com/en/dev/ref/settings/#csrf-cookie-httponly
-CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = False
 # https://docs.djangoproject.com/en/3.2/ref/settings/#csrf-cookie-secure
 CSRF_COOKIE_SECURE = env("DJANGO_CSRF_COOKIE_SECURE", default=False)
 # https://docs.djangoproject.com/en/dev/ref/settings/#secure-browser-xss-filter
@@ -343,7 +345,7 @@ ACCOUNT_EMAIL_REQUIRED = True
 # https://django-allauth.readthedocs.io/en/latest/configuration.html
 ACCOUNT_EMAIL_VERIFICATION = env.bool("DJANGO_ACCOUNT_EMAIL_VERIFICATION", "mandatory")
 # https://django-allauth.readthedocs.io/en/latest/configuration.html
-ACCOUNT_ADAPTER = "allauth_2fa.adapter.OTPAdapter"
+ACCOUNT_ADAPTER = "ghostwriter.users.adapters.CustomOTPAdapter"
 # https://django-allauth.readthedocs.io/en/latest/configuration.html
 SOCIALACCOUNT_ADAPTER = "ghostwriter.users.adapters.SocialAccountAdapter"
 ACCOUNT_SIGNUP_FORM_CLASS = "ghostwriter.home.forms.SignupForm"
