@@ -116,7 +116,7 @@
             <td class="text-justify">
               <a class="clickable" href="{{ finding.get_absolute_url }}">{{ finding.display_title }}</a>
             </td>
-            <td class="align-middle">{{ finding.replication_steps | striptags }}
+            <td class="align-middle text-left">{{ finding.replication_steps | striptags }}
             </td>
             {% if searching_report_findings %}
               <td class="text-justify">
