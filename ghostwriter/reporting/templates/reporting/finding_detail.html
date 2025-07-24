@@ -138,13 +138,13 @@
     </div>
     <div class="card-body finding-content">
       {% if finding.host_detection_techniques %}
-        <h6 class="text-center card-title">Host Detection</h6>
+        <h6 class="text-center card-title">Difficulty of Exploit</h6>
         <hr>
         <div class="rich-text-field-preview">{{ finding.host_detection_techniques|bleach }}</div>
       {% endif %}
 
       {% if finding.network_detection_techniques %}
-        <h6 class="text-center card-title">Network Detection</h6>
+        <h6 class="text-center card-title">Status of Finding</h6>
         <hr>
         <div class="rich-text-field-preview">{{ finding.network_detection_techniques|bleach }}</div>
       {% endif %}
@@ -157,13 +157,13 @@
 
   <div id="replicationCard" class="card mb-3">
     <div class="card-header finding-header icon help-icon">
-      Replication Steps
+      Category
     </div>
     <div class="card-body finding-content">
       {% if finding.replication_steps %}
         <div class="rich-text-field-preview">{{ finding.replication_steps|bleach }}</div>
       {% else %}
-        <p>Replication steps are needed.</p>
+        <p>Associate a category to the finding.</p>
       {% endif %}
     </div>
   </div>
