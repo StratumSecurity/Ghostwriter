@@ -155,7 +155,7 @@
             <td class="align-middle">{{ finding.replication_steps | striptags }}</td>
             <td class="align-middle">{{ finding.network_detection_techniques | striptags }}</td>
             {% if finding.assigned_to == request.user %}
-              <td class="align-middle text-left">
+              <td class="align-middle">
                 <span id="assignee-status-{{ finding.id }}" class="
                   {% if finding.complete %}
                     healthy">
@@ -167,9 +167,9 @@
               </td>
             {% else %}
               {% if finding.assigned_to %}
-                <td class="neutral align-middle text-left">{{ finding.assigned_to }}</td>
+                <td class="neutral align-middle">{{ finding.assigned_to }}</td>
               {% else %}
-                <td class="medium align-middle text-left">TBD</td>
+                <td class="medium align-middle">TBD</td>
               {% endif %}
             {% endif %}
             <td class="align-middle">

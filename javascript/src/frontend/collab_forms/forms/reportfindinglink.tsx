@@ -26,10 +26,10 @@ function ReportFindingLinkForm() {
             toolbarExtra={renderToolbarExtra}
             extraTop={
                 <>
-                    <h4 className="icon list-icon">Affected Entities</h4>
+                    <h4 className="icon list-icon">Details</h4>
                     <div className="form-group col-md-12">
                         <label htmlFor="collab-form-affected-entities">
-                            Affected Entities
+                            Details
                         </label>
                         <div>
                             <RichTextEditor
@@ -41,8 +41,7 @@ function ReportFindingLinkForm() {
                                 toolbarExtra={renderToolbarExtra}
                             />
                             <small className="form-text text-muted">
-                                Provide a list of the affected entities (e.g.
-                                domains, hostnames, IP addresses)
+                                Provide details of the finding and how to reproduce
                             </small>
                         </div>
                     </div>

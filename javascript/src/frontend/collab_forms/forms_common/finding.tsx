@@ -226,7 +226,7 @@ export function FindingFormFields({
             <hr />
 
             <div className="form-group col-md-12">
-                <label>Mitigation</label>
+                <label>Recommendation</label>
                 <div>
                     <RichTextEditor
                         connected={connected}
@@ -240,7 +240,7 @@ export function FindingFormFields({
             </div>
 
             <div className="form-group col-md-12">
-                <label>Replication Steps</label>
+                <label>Category</label>
                 <div>
                     <RichTextEditor
                         connected={connected}
@@ -254,7 +254,7 @@ export function FindingFormFields({
             </div>
 
             <div className="form-group col-md-12">
-                <label>Host Detection Techniques</label>
+                <label>Difficulty of Exploit</label>
                 <div>
                     <RichTextEditor
                         connected={connected}
@@ -268,7 +268,7 @@ export function FindingFormFields({
             </div>
 
             <div className="form-group col-md-12">
-                <label>Network Detection Techniques</label>
+                <label>Status of Finding</label>
                 <div>
                     <RichTextEditor
                         connected={connected}
@@ -278,6 +278,9 @@ export function FindingFormFields({
                         )}
                         toolbarExtra={toolbarExtra}
                     />
+                    <small className="form-text text-muted">
+                        Assign a status of OPEN, ACCEPTED, or CLOSED to the finding
+                    </small>
                 </div>
             </div>
 
