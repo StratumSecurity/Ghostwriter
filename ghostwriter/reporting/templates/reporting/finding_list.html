@@ -52,6 +52,7 @@
           <th class="sortable align-middle text-left" data-internal-name="severity">Severity</th>
           <th class="sortable align-middle text-left" data-internal-name="type">Type</th>
           <th class="sortable align-middle text-left" data-no-hide>Title</th>
+          <th class="sortable align-middle text-left">Category</th>
           {% if searching_report_findings %}
             <th class="sortable pr-4 align-middle text-left" data-internal-name="report">Report</th>
           {% endif %}
@@ -91,6 +92,10 @@
                       mobile-icon
                   {% elif finding.finding_type.finding_type == "Network" %}
                       network-icon
+                  {% elif finding.finding_type.finding_type == "Internal" %}
+                      network-icon
+                  {% elif finding.finding_type.finding_type == "External" %}
+                      globe-icon
                   {% elif finding.finding_type.finding_type == "Physical" %}
                       physical-icon
                   {% elif finding.finding_type.finding_type == "Web" %}
@@ -98,7 +103,7 @@
                   {% elif finding.finding_type.finding_type == "Wireless" %}
                       wireless-icon
                   {% else %}
-                      bug-icon
+                      minus-icon
                   {% endif %}"
                   style="cursor: help"
                   data-toggle="tooltip"
@@ -110,6 +115,8 @@
             </td>
             <td class="text-justify">
               <a class="clickable" href="{{ finding.get_absolute_url }}">{{ finding.display_title }}</a>
+            </td>
+            <td class="align-middle">{{ finding.replication_steps | striptags }}
             </td>
             {% if searching_report_findings %}
               <td class="text-justify">

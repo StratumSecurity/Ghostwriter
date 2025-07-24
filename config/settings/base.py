@@ -1,6 +1,7 @@
 """
 Base settings to build other settings files upon.
 """
+
 # Standard Libraries
 from datetime import timedelta
 from pathlib import Path
@@ -23,7 +24,7 @@ env = environ.Env()
 READ_DOT_ENV_FILE = env.bool("DJANGO_READ_DOT_ENV_FILE", default=False)
 if READ_DOT_ENV_FILE:
     # OS environment variables take precedence over variables from .env
-    env.read_env(str(ROOT_DIR / ".env"))
+    env.read_env(f"{ROOT_DIR}/.env")
 
 # GENERAL
 # ------------------------------------------------------------------------------
@@ -125,6 +126,7 @@ LOCAL_APPS = [
     "ghostwriter.singleton.apps.SingletonConfig",
     "ghostwriter.api.apps.ApiConfig",
     "ghostwriter.status.apps.StatusConfig",
+    "ghostwriter.stratum.apps.StratumConfig",
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -174,7 +176,9 @@ PASSWORD_HASHERS = [
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#auth-password-validators
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+    },
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
@@ -269,7 +273,9 @@ SESSION_COOKIE_HTTPONLY = True
 # https://docs.djangoproject.com/en/3.2/ref/settings/#session-cookie-age
 SESSION_COOKIE_AGE = env("DJANGO_SESSION_COOKIE_AGE", default=60 * 60 * 2)
 # https://docs.djangoproject.com/en/3.2/ref/settings/#session-expire-at-browser-close
-SESSION_EXPIRE_AT_BROWSER_CLOSE = env("DJANGO_SESSION_EXPIRE_AT_BROWSER_CLOSE", default=True)
+SESSION_EXPIRE_AT_BROWSER_CLOSE = env(
+    "DJANGO_SESSION_EXPIRE_AT_BROWSER_CLOSE", default=True
+)
 # https://docs.djangoproject.com/en/3.2/topics/http/sessions/#when-sessions-are-saved
 SESSION_SAVE_EVERY_REQUEST = env("DJANGO_SESSION_SAVE_EVERY_REQUEST", default=True)
 # https://docs.djangoproject.com/en/3.2/ref/settings/#session-cookie-secure
@@ -286,7 +292,9 @@ X_FRAME_OPTIONS = "SAMEORIGIN"
 # EMAIL
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#email-backend
-EMAIL_BACKEND = env("DJANGO_EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend")
+EMAIL_BACKEND = env(
+    "DJANGO_EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend"
+)
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # https://docs.djangoproject.com/en/2.2/ref/settings/#email-timeout
@@ -309,7 +317,11 @@ MANAGERS = ADMINS
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "formatters": {"verbose": {"format": "%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s"}},
+    "formatters": {
+        "verbose": {
+            "format": "%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s"
+        }
+    },
     "handlers": {
         "console": {
             "level": "DEBUG",
@@ -346,7 +358,9 @@ ALLAUTH_2FA_FORMS = {
     "setup": "ghostwriter.users.forms.User2FADeviceForm",
     "remove": "ghostwriter.users.forms.User2FADeviceRemoveForm",
 }
-ALLAUTH_2FA_ALWAYS_REVEAL_BACKUP_TOKENS = env("DJANGO_2FA_ALWAYS_REVEAL_BACKUP_TOKENS", default=False)
+ALLAUTH_2FA_ALWAYS_REVEAL_BACKUP_TOKENS = env(
+    "DJANGO_2FA_ALWAYS_REVEAL_BACKUP_TOKENS", default=False
+)
 ALLAUTH_2FA_SETUP_SUCCESS_URL = "users:redirect"
 ALLAUTH_2FA_REMOVE_SUCCESS_URL = "users:redirect"
 
@@ -387,7 +401,9 @@ Q_CLUSTER = {
     "queue_limit": 500,
     "cpu_affinity": 1,
     "label": "Django Q",
-    "redis": env("QCLUSTER_CONNECTION", default={"host": "redis", "port": 6379, "db": 0}),
+    "redis": env(
+        "QCLUSTER_CONNECTION", default={"host": "redis", "port": 6379, "db": 0}
+    ),
 }
 
 # SETTINGS

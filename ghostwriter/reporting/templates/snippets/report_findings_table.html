@@ -19,6 +19,8 @@
           </div>
         </div>
       </th>
+      <th class="align-middle text-left">Category</th>
+      <th class="align-middle text-left">Status</th>
       <th class="align-middle text-left">
         <div class="dropdown dropleft">
           <span id="owner-info-btn" class="dropdown-info" data-toggle="dropdown" aria-haspopup="true"
@@ -47,7 +49,7 @@
     {% group_by_severity report.reportfindinglink_set.all as severity_groups %}
     {% for group, values in severity_groups.items %}
       <tbody>
-      <th id="{{ values.tpl_name }}_header" class="severity-header {{ values.tpl_name }}" colspan="7"
+      <th id="{{ values.tpl_name }}_header" class="severity-header {{ values.tpl_name }}" colspan="9"
           scope="colgroup">{{ group }}</th>
       </tbody>
       <tbody id="{{ values.tpl_name }}_severity" class="sortable_list connected_sortable"
@@ -150,6 +152,8 @@
                 ></a>
               </td>
             {% endif %}
+            <td class="align-middle">{{ finding.replication_steps | striptags }}</td>
+            <td class="align-middle">{{ finding.network_detection_techniques | striptags }}</td>
             {% if finding.assigned_to == request.user %}
               <td class="align-middle text-left">
                 <span id="assignee-status-{{ finding.id }}" class="

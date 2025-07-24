@@ -36,7 +36,7 @@
     "python.formatting.provider": "black",
     "python.formatting.blackArgs": [
         "--line-length",
-        "90"
+        "119"
     ],
     "[python]": {
         "editor.codeActionsOnSave": {

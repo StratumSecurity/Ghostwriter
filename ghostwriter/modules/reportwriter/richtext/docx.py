@@ -482,6 +482,10 @@ class HtmlToDocxWithEvidence(HtmlToDocx):
 
             par.alignment = WD_ALIGN_PARAGRAPH.CENTER
             run = par.add_run()
+
+            # Add space point before the image to not overlap onto the table header
+            par.paragraph_format.space_before = Pt(8)
+
             try:
                 run.add_picture(file_path, width=Inches(self.evidence_image_width))
             except UnrecognizedImageError as e:
@@ -582,7 +586,9 @@ class ListTracking:
 
     @staticmethod
     def q_w(tag):
-        return etree.QName("http://schemas.openxmlformats.org/wordprocessingml/2006/main", tag)
+        return etree.QName(
+            "http://schemas.openxmlformats.org/wordprocessingml/2006/main", tag
+        )
 
     def add_paragraph(self, pg, level: int, is_ordered: bool):
         """
@@ -590,7 +596,9 @@ class ListTracking:
         """
         if level > len(self.level_list_is_ordered):
             raise Exception(
-                "Tried to add level {} to a list with {} existing levels".format(level, len(self.level_list_is_ordered))
+                "Tried to add level {} to a list with {} existing levels".format(
+                    level, len(self.level_list_is_ordered)
+                )
             )
         if level == len(self.level_list_is_ordered):
             self.level_list_is_ordered.append(is_ordered)

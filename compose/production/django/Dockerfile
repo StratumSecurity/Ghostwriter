@@ -19,6 +19,11 @@ RUN apk --no-cache add build-base curl \
     && apk --no-cache add libffi-dev py-cffi \
     # XLSX dependencies
     && apk --no-cache add libxml2-dev libxslt-dev \
+    # Pull down custom fonts from S3 bucket
+    && mkdir -p /usr/local/share/fonts \
+    && curl -O https://stratum-ghostwriter.s3.amazonaws.com/Aptos.ttf --output-dir /usr/local/share/fonts \
+    # Refresh the font cache with the new font installed
+    && fc-cache -f \
     # Rust and Cargo required by the ``cryptography`` Python package
     && apk --no-cache add rust \
     && apk --no-cache add cargo \
